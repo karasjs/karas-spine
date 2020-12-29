@@ -7,6 +7,9 @@
   "presets": [
     [
       "@babel/preset-env"
+    ],
+    [
+      "babel-preset-karas"
     ]
   ]
 }
