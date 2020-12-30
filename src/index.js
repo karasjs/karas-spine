@@ -14,7 +14,7 @@ class Spine extends karas.Component {
 
   init() {
     let props = this.props;
-    let { atlas, json, tex, skelName, animName, fitSize } = props;
+    let { atlas, json, tex, animName, fitSize } = props;
     let fake = this.ref.fake;
     // let originRender = fake.render;
     let assetManager = new spineCanvas.canvas.AssetManager();
@@ -25,11 +25,16 @@ class Spine extends karas.Component {
     let frame = () => {
       if(assetManager.isLoadingComplete()) {
         karas.animate.frame.offFrame(frame);
-        let data = util.loadSkeleton(assetManager, skelName, animName, 'default', atlas, json, tex);
+        let data = util.loadSkeleton(assetManager, animName, 'default', atlas, json, tex);
         let state = data.state;
         let skeleton = data.skeleton;
+        let bounds = data.bounds;
+        let x = bounds.offset.x;
+        let y = bounds.offset.y;
         let width = data.bounds.size.x;
         let height = data.bounds.size.y;
+        let centerX = x + width * 0.5;
+        let centerY = y + height * 0.5;
 
         let last;
         let skeletonRenderer;
@@ -37,23 +42,30 @@ class Spine extends karas.Component {
         fake.render = (renderMode, lv, ctx) => {
           if(!skeletonRenderer) {
             skeletonRenderer = new spineCanvas.canvas.SkeletonRenderer(ctx);
-            if(props.debug) {
+            if(props.debugRendering) {
               skeletonRenderer.debugRendering = true;
+            }
+            if(props.triangleRendering) {
+              skeletonRenderer.triangleRendering = true;
             }
           }
           let now = karas.animate.frame.__now;
           let delta = (now - last) / 1000;
           last = now;
 
+          let size = fake.getComputedStyle(['width', 'height']);
+          ctx.translate(fake.sx, fake.sy);
+          let scale = 1;
           if(fitSize) {
-            let size = fake.getComputedStyle(['width', 'height']);
-            let scx = size.width / width;
-            let scy = size.height / height;
-            let min = Math.min(scx, scy);
-            if(min !== 1) {
-              ctx.transform(min, 0, 0, min, 0, 0);
+            let scx = width / size.width;
+            let scy = height / size.height;
+            scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+            if(scale !== 1) {
+              ctx.scale(1 / scale, 1 / scale);
             }
           }
+          ctx.translate(-centerX, -centerY);
+          ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
 
           state.update(delta);
           state.apply(skeleton);
@@ -84,7 +96,7 @@ class Spine extends karas.Component {
                  style={{
                    width: '100%',
                    height: '100%',
-                   translateX: '50%',
+                   // translateX: '50%',
                    visibility: 'hidden',
                  }}/>
     </div>;

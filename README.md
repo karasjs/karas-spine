@@ -11,10 +11,10 @@ karas.render(
       atlas="spineboy.atlas" // 指定atlas地址
       json="spineboy-ess.json" // 指定json地址
       tex="spineboy.png" // 指定纹理图地址
-      skelName="spineboy-ess" // 骨架名
       animName="walk" // 动画名
-      fitSize={false} // 自适应尺寸，否则用原始的
-      debug={false} // debug开启
+      fitSize={false} // 自适应尺寸，否则用原始的，可以为true或cover
+      debugRendering={false} // debug开启
+      triangleRendering={false} // triangle绘制开启
     />
   </canvas>,
   '#domId'

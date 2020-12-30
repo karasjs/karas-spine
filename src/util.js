@@ -10,7 +10,7 @@ function calculateBounds(skeleton) {
   return { offset: offset, size: size };
 }
 
-function loadSkeleton(assetManager, name, initialAnimation, skin, atlasUrl, jsonUrl, texUrl) {
+function loadSkeleton(assetManager, initialAnimation, skin, atlasUrl, jsonUrl, texUrl) {
   if(skin === undefined) {
     skin = 'default';
   }
@@ -30,7 +30,7 @@ function loadSkeleton(assetManager, name, initialAnimation, skin, atlasUrl, json
   // Set the scale to apply during parsing, parse the file, and create a new skeleton.
   let skeletonData = skeletonJson.readSkeletonData(assetManager.get(jsonUrl));
   let skeleton = new spine.Skeleton(skeletonData);
-  // skeleton.scaleY = -1;
+  skeleton.scaleY = -1;
   let bounds = calculateBounds(skeleton);
   skeleton.setSkinByName(skin);
 

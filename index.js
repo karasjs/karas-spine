@@ -10073,7 +10073,7 @@
     };
   }
 
-  function loadSkeleton(assetManager, name, initialAnimation, skin, atlasUrl, jsonUrl, texUrl) {
+  function loadSkeleton(assetManager, initialAnimation, skin, atlasUrl, jsonUrl, texUrl) {
     if (skin === undefined) {
       skin = 'default';
     } // Load the texture atlas using name.atlas and name.png from the AssetManager.
@@ -10089,8 +10089,8 @@
     var skeletonJson = new spineCanvas.SkeletonJson(atlasLoader); // Set the scale to apply during parsing, parse the file, and create a new skeleton.
 
     var skeletonData = skeletonJson.readSkeletonData(assetManager.get(jsonUrl));
-    var skeleton = new spineCanvas.Skeleton(skeletonData); // skeleton.scaleY = -1;
-
+    var skeleton = new spineCanvas.Skeleton(skeletonData);
+    skeleton.scaleY = -1;
     var bounds = calculateBounds(skeleton);
     skeleton.setSkinByName(skin); // Create an AnimationState, and set the initial animation in looping mode.
 
@@ -10118,7 +10118,7 @@
     loadSkeleton: loadSkeleton
   };
 
-  var version = "0.0.1";
+  var version = "0.0.2";
 
   var Spine = /*#__PURE__*/function (_karas$Component) {
     _inherits(Spine, _karas$Component);
@@ -10148,7 +10148,6 @@
         var atlas = props.atlas,
             json = props.json,
             tex = props.tex,
-            skelName = props.skelName,
             animName = props.animName,
             fitSize = props.fitSize;
         var fake = this.ref.fake; // let originRender = fake.render;
@@ -10161,11 +10160,16 @@
         var frame = function frame() {
           if (assetManager.isLoadingComplete()) {
             karas.animate.frame.offFrame(frame);
-            var data = util.loadSkeleton(assetManager, skelName, animName, 'default', atlas, json, tex);
+            var data = util.loadSkeleton(assetManager, animName, 'default', atlas, json, tex);
             var state = data.state;
             var skeleton = data.skeleton;
+            var bounds = data.bounds;
+            var x = bounds.offset.x;
+            var y = bounds.offset.y;
             var width = data.bounds.size.x;
             var height = data.bounds.size.y;
+            var centerX = x + width * 0.5;
+            var centerY = y + height * 0.5;
             var last;
             var skeletonRenderer;
 
@@ -10173,26 +10177,34 @@
               if (!skeletonRenderer) {
                 skeletonRenderer = new spineCanvas.canvas.SkeletonRenderer(ctx);
 
-                if (props.debug) {
+                if (props.debugRendering) {
                   skeletonRenderer.debugRendering = true;
+                }
+
+                if (props.triangleRendering) {
+                  skeletonRenderer.triangleRendering = true;
                 }
               }
 
               var now = karas.animate.frame.__now;
               var delta = (now - last) / 1000;
               last = now;
+              var size = fake.getComputedStyle(['width', 'height']);
+              ctx.translate(fake.sx, fake.sy);
+              var scale = 1;
 
               if (fitSize) {
-                var size = fake.getComputedStyle(['width', 'height']);
-                var scx = size.width / width;
-                var scy = size.height / height;
-                var min = Math.min(scx, scy);
+                var scx = width / size.width;
+                var scy = height / size.height;
+                scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
 
-                if (min !== 1) {
-                  ctx.transform(min, 0, 0, min, 0, 0);
+                if (scale !== 1) {
+                  ctx.scale(1 / scale, 1 / scale);
                 }
               }
 
+              ctx.translate(-centerX, -centerY);
+              ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
               state.update(delta);
               state.apply(skeleton);
               skeleton.updateWorldTransform();
@@ -10222,7 +10234,7 @@
           style: {
             width: '100%',
             height: '100%',
-            translateX: '50%',
+            // translateX: '50%',
             visibility: 'hidden'
           }
         }));

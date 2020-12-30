@@ -1,0 +1,125 @@
+
+apploud.png
+size: 2011,1429
+format: RGBA8888
+filter: Linear,Linear
+repeat: none
+apploud-blue-1
+  rotate: true
+  xy: 1021, 2
+  size: 259, 369
+  orig: 259, 369
+  offset: 0, 0
+  index: -1
+apploud-blue-2
+  rotate: true
+  xy: 550, 254
+  size: 295, 374
+  orig: 295, 374
+  offset: 0, 0
+  index: -1
+apploud-none-1
+  rotate: true
+  xy: 1309, 821
+  size: 176, 440
+  orig: 176, 440
+  offset: 0, 0
+  index: -1
+apploud-none-2
+  rotate: true
+  xy: 1392, 48
+  size: 223, 426
+  orig: 223, 426
+  offset: 0, 0
+  index: -1
+apploud-yellow-1
+  rotate: false
+  xy: 1833, 195
+  size: 176, 438
+  orig: 176, 438
+  offset: 0, 0
+  index: -1
+apploud-yellow-2
+  rotate: true
+  xy: 188, 3
+  size: 227, 439
+  orig: 227, 439
+  offset: 0, 0
+  index: -1
+down
+  rotate: true
+  xy: 88, 551
+  size: 876, 375
+  orig: 876, 375
+  offset: 0, 0
+  index: -1
+down-white
+  rotate: true
+  xy: 465, 551
+  size: 876, 375
+  orig: 876, 375
+  offset: 0, 0
+  index: -1
+highlight
+  rotate: false
+  xy: 88, 232
+  size: 460, 317
+  orig: 520, 371
+  offset: 30, 27
+  index: -1
+leftglow
+  rotate: false
+  xy: 1392, 999
+  size: 599, 428
+  orig: 639, 465
+  offset: 20, 18
+  index: -1
+leftglow-white
+  rotate: true
+  xy: 842, 788
+  size: 639, 465
+  orig: 639, 465
+  offset: 0, 0
+  index: -1
+line
+  rotate: true
+  xy: 2, 214
+  size: 1213, 84
+  orig: 1395, 96
+  offset: 91, 6
+  index: -1
+point
+  rotate: false
+  xy: 2, 23
+  size: 184, 189
+  orig: 488, 493
+  offset: 152, 152
+  index: -1
+rightglow
+  rotate: false
+  xy: 1338, 273
+  size: 493, 360
+  orig: 523, 410
+  offset: 27, 25
+  index: -1
+rightlow-white
+  rotate: true
+  xy: 926, 263
+  size: 523, 410
+  orig: 523, 410
+  offset: 0, 0
+  index: -1
+thumbs-up-1
+  rotate: true
+  xy: 629, 2
+  size: 250, 390
+  orig: 250, 390
+  offset: 0, 0
+  index: -1
+thumbs-up-2
+  rotate: false
+  xy: 1751, 635
+  size: 244, 362
+  orig: 244, 362
+  offset: 0, 0
+  index: -1
