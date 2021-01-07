@@ -14,7 +14,7 @@ class Spine extends karas.Component {
 
   init() {
     let props = this.props;
-    let { atlas, json, tex, animName, fitSize } = props;
+    let { atlas, json, tex, animName, fitSize, pause } = props;
     let fake = this.ref.fake;
     // let originRender = fake.render;
     let assetManager = new spineCanvas.canvas.AssetManager();
@@ -36,7 +36,8 @@ class Spine extends karas.Component {
         let centerX = x + width * 0.5;
         let centerY = y + height * 0.5;
 
-        let last;
+        let self = this;
+        let last = karas.animate.frame.__now;
         let skeletonRenderer;
 
         fake.render = (renderMode, lv, ctx) => {
@@ -52,6 +53,9 @@ class Spine extends karas.Component {
           let now = karas.animate.frame.__now;
           let delta = (now - last) / 1000;
           last = now;
+          if(a && a.pending) {
+            delta = 0;
+          }
 
           let size = fake.getComputedStyle(['width', 'height']);
           ctx.translate(fake.sx, fake.sy);
@@ -67,13 +71,13 @@ class Spine extends karas.Component {
           ctx.translate(-centerX, -centerY);
           ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
 
-          state.update(delta);
+          delta && state.update(delta);
           state.apply(skeleton);
           skeleton.updateWorldTransform();
           skeletonRenderer.draw(skeleton);
         };
         fake.clearAnimate();
-        fake.animate([
+        let a = self.animation = fake.animate([
           {
             backgroundColor: '#000',
           },
@@ -84,7 +88,12 @@ class Spine extends karas.Component {
           duration: 1000,
           iterations: Infinity,
         });
-        last = karas.animate.frame.__now;
+        if(pause) {
+          a.pause();
+        }
+        a.on('play', function() {
+          last = karas.animate.frame.__now;
+        });
       }
     }
     karas.animate.frame.onFrame(frame);

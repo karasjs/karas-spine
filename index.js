@@ -10118,7 +10118,7 @@
     loadSkeleton: loadSkeleton
   };
 
-  var version = "0.0.2";
+  var version = "0.0.3";
 
   var Spine = /*#__PURE__*/function (_karas$Component) {
     _inherits(Spine, _karas$Component);
@@ -10144,12 +10144,15 @@
     }, {
       key: "init",
       value: function init() {
+        var _this = this;
+
         var props = this.props;
         var atlas = props.atlas,
             json = props.json,
             tex = props.tex,
             animName = props.animName,
-            fitSize = props.fitSize;
+            fitSize = props.fitSize,
+            pause = props.pause;
         var fake = this.ref.fake; // let originRender = fake.render;
 
         var assetManager = new spineCanvas.canvas.AssetManager();
@@ -10170,7 +10173,8 @@
             var height = data.bounds.size.y;
             var centerX = x + width * 0.5;
             var centerY = y + height * 0.5;
-            var last;
+            var self = _this;
+            var last = karas.animate.frame.__now;
             var skeletonRenderer;
 
             fake.render = function (renderMode, lv, ctx) {
@@ -10189,6 +10193,11 @@
               var now = karas.animate.frame.__now;
               var delta = (now - last) / 1000;
               last = now;
+
+              if (a && a.pending) {
+                delta = 0;
+              }
+
               var size = fake.getComputedStyle(['width', 'height']);
               ctx.translate(fake.sx, fake.sy);
               var scale = 1;
@@ -10205,14 +10214,14 @@
 
               ctx.translate(-centerX, -centerY);
               ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
-              state.update(delta);
+              delta && state.update(delta);
               state.apply(skeleton);
               skeleton.updateWorldTransform();
               skeletonRenderer.draw(skeleton);
             };
 
             fake.clearAnimate();
-            fake.animate([{
+            var a = self.animation = fake.animate([{
               backgroundColor: '#000'
             }, {
               backgroundColor: '#FFF'
@@ -10220,7 +10229,14 @@
               duration: 1000,
               iterations: Infinity
             });
-            last = karas.animate.frame.__now;
+
+            if (pause) {
+              a.pause();
+            }
+
+            a.on('play', function () {
+              last = karas.animate.frame.__now;
+            });
           }
         };
 
