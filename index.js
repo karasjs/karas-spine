@@ -10233,8 +10233,6 @@
               skeleton.updateWorldTransform();
               skeletonRenderer.draw(skeleton);
             };
-
-            fake.clearAnimate();
           }
         };
 

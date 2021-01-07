@@ -94,7 +94,6 @@ class Spine extends karas.Component {
           skeleton.updateWorldTransform();
           skeletonRenderer.draw(skeleton);
         };
-        fake.clearAnimate();
       }
     }
     karas.animate.frame.onFrame(frame);
