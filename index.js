@@ -10144,8 +10144,6 @@
     }, {
       key: "init",
       value: function init() {
-        var _this = this;
-
         var props = this.props;
         var atlas = props.atlas,
             json = props.json,
@@ -10159,6 +10157,23 @@
         assetManager.loadText(atlas);
         assetManager.loadText(json);
         assetManager.loadTexture(tex);
+        var last;
+        var a = this.animation = fake.animate([{
+          backgroundColor: '#000'
+        }, {
+          backgroundColor: '#FFF'
+        }], {
+          duration: 1000,
+          iterations: Infinity
+        });
+
+        if (pause) {
+          a.pause();
+        }
+
+        a.on('play', function () {
+          last = karas.animate.frame.__now;
+        });
 
         var frame = function frame() {
           if (assetManager.isLoadingComplete()) {
@@ -10173,8 +10188,7 @@
             var height = data.bounds.size.y;
             var centerX = x + width * 0.5;
             var centerY = y + height * 0.5;
-            var self = _this;
-            var last = karas.animate.frame.__now;
+            last = karas.animate.frame.__now;
             var skeletonRenderer;
 
             fake.render = function (renderMode, lv, ctx) {
@@ -10221,22 +10235,6 @@
             };
 
             fake.clearAnimate();
-            var a = self.animation = fake.animate([{
-              backgroundColor: '#000'
-            }, {
-              backgroundColor: '#FFF'
-            }], {
-              duration: 1000,
-              iterations: Infinity
-            });
-
-            if (pause) {
-              a.pause();
-            }
-
-            a.on('play', function () {
-              last = karas.animate.frame.__now;
-            });
           }
         };
 

@@ -22,6 +22,25 @@ class Spine extends karas.Component {
     assetManager.loadText(json);
     assetManager.loadTexture(tex);
 
+    let last;
+    let a = this.animation = fake.animate([
+      {
+        backgroundColor: '#000',
+      },
+      {
+        backgroundColor: '#FFF',
+      },
+    ], {
+      duration: 1000,
+      iterations: Infinity,
+    });
+    if(pause) {
+      a.pause();
+    }
+    a.on('play', function() {
+      last = karas.animate.frame.__now;
+    });
+
     let frame = () => {
       if(assetManager.isLoadingComplete()) {
         karas.animate.frame.offFrame(frame);
@@ -36,8 +55,7 @@ class Spine extends karas.Component {
         let centerX = x + width * 0.5;
         let centerY = y + height * 0.5;
 
-        let self = this;
-        let last = karas.animate.frame.__now;
+        last = karas.animate.frame.__now;
         let skeletonRenderer;
 
         fake.render = (renderMode, lv, ctx) => {
@@ -77,23 +95,6 @@ class Spine extends karas.Component {
           skeletonRenderer.draw(skeleton);
         };
         fake.clearAnimate();
-        let a = self.animation = fake.animate([
-          {
-            backgroundColor: '#000',
-          },
-          {
-            backgroundColor: '#FFF',
-          },
-        ], {
-          duration: 1000,
-          iterations: Infinity,
-        });
-        if(pause) {
-          a.pause();
-        }
-        a.on('play', function() {
-          last = karas.animate.frame.__now;
-        });
       }
     }
     karas.animate.frame.onFrame(frame);
