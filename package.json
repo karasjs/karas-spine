@@ -1,6 +1,6 @@
 {
   "name": "karas-spine",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Spine component for karas.",
   "maintainers": [
     {
@@ -17,7 +17,7 @@
     "url": "git://github.com/karasjs/karas-spine.git"
   },
   "peerDependencies": {
-    "karas": "^0.46.7"
+    "karas": "^0.47.4"
   },
   "devDependencies": {
     "@babel/core": "^7.8.7",

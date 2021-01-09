@@ -10118,7 +10118,7 @@
     loadSkeleton: loadSkeleton
   };
 
-  var version = "0.0.3";
+  var version = "0.0.4";
 
   var Spine = /*#__PURE__*/function (_karas$Component) {
     _inherits(Spine, _karas$Component);
@@ -10150,7 +10150,8 @@
             tex = props.tex,
             animName = props.animName,
             fitSize = props.fitSize,
-            pause = props.pause;
+            pause = props.pause,
+            iterations = props.iterations;
         var fake = this.ref.fake; // let originRender = fake.render;
 
         var assetManager = new spineCanvas.canvas.AssetManager();
@@ -10190,6 +10191,17 @@
             var centerY = y + height * 0.5;
             last = karas.animate.frame.__now;
             var skeletonRenderer;
+            a.currentTime = 0;
+            a.playCount = 0;
+            a.duration = state.data.skeletonData.animations[0].duration * 1000;
+            console.log(iterations, a.duration);
+            a.on('finish', function () {
+              console.log('end');
+            });
+
+            if (iterations) {
+              a.iterations = iterations;
+            }
 
             fake.render = function (renderMode, lv, ctx) {
               if (!skeletonRenderer) {

@@ -14,7 +14,7 @@ class Spine extends karas.Component {
 
   init() {
     let props = this.props;
-    let { atlas, json, tex, animName, fitSize, pause } = props;
+    let { atlas, json, tex, animName, fitSize, pause, iterations } = props;
     let fake = this.ref.fake;
     // let originRender = fake.render;
     let assetManager = new spineCanvas.canvas.AssetManager();
@@ -57,6 +57,17 @@ class Spine extends karas.Component {
 
         last = karas.animate.frame.__now;
         let skeletonRenderer;
+
+        a.currentTime = 0;
+        a.playCount = 0;
+        a.duration = state.data.skeletonData.animations[0].duration * 1000;
+        console.log(iterations, a.duration)
+        a.on('finish',function() {
+          console.log('end')
+        })
+        if(iterations) {
+          a.iterations = iterations;
+        }
 
         fake.render = (renderMode, lv, ctx) => {
           if(!skeletonRenderer) {
