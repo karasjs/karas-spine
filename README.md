@@ -6,7 +6,7 @@ karas spine插件。
 
 大部分解析逻辑是沿用官方的库的代码，但是里面有些代码在用的时候会出问题，对源码有些修改，原版里面几个api的参数和细节逻辑有改。
 
-由于spine的官方解析逻辑没有兼容旧版本spine，所以本插件目前只支持4以上的版本。使用3.6或3.8版本的spine可能会在解析时候报错或者无法正确拿到动画数据情况。
+由于spine的官方解析逻辑没有兼容旧版本spine，所以本插件目前只支持3.8和4以上的版本。使用3.6版本的spine可能会在解析时候报错或者无法正确拿到动画数据情况。
 
 [![NPM version](https://img.shields.io/npm/v/karas.svg)](https://npmjs.org/package/karas)
 
