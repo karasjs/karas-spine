@@ -1,0 +1,70 @@
+/******************************************************************************
+ * Spine Runtimes License Agreement
+ * Last updated January 1, 2020. Replaces all prior versions.
+ *
+ * Copyright (c) 2013-2020, Esoteric Software LLC
+ *
+ * Integration of the Spine Runtimes into software or otherwise creating
+ * derivative works of the Spine Runtimes is permitted under the terms and
+ * conditions of Section 2 of the Spine Editor License Agreement:
+ * http://esotericsoftware.com/spine-editor-license
+ *
+ * Otherwise, it is permitted to integrate the Spine Runtimes into software
+ * or otherwise create derivative works of the Spine Runtimes (collectively,
+ * "Products"), provided that each user of the Products must obtain their own
+ * Spine Editor license and redistribution of the Products in any form must
+ * include this license and copyright notice.
+ *
+ * THE SPINE RUNTIMES ARE PROVIDED BY ESOTERIC SOFTWARE LLC "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL ESOTERIC SOFTWARE LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES,
+ * BUSINESS INTERRUPTION, OR LOSS OF USE, DATA, OR PROFITS) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *****************************************************************************/
+/** Stores mix (crossfade) durations to be applied when {@link AnimationState} animations are changed. */
+export class AnimationStateData {
+    constructor(skeletonData) {
+        this.animationToMixTime = {};
+        /** The mix duration to use when no mix duration has been defined between two animations. */
+        this.defaultMix = 0;
+        if (!skeletonData)
+            throw new Error("skeletonData cannot be null.");
+        this.skeletonData = skeletonData;
+    }
+    /** Sets a mix duration by animation name.
+     *
+     * See {@link #setMixWith()}. */
+    setMix(fromName, toName, duration) {
+        let from = this.skeletonData.findAnimation(fromName);
+        if (!from)
+            throw new Error("Animation not found: " + fromName);
+        let to = this.skeletonData.findAnimation(toName);
+        if (!to)
+            throw new Error("Animation not found: " + toName);
+        this.setMixWith(from, to, duration);
+    }
+    /** Sets the mix duration when changing from the specified animation to the other.
+     *
+     * See {@link TrackEntry#mixDuration}. */
+    setMixWith(from, to, duration) {
+        if (!from)
+            throw new Error("from cannot be null.");
+        if (!to)
+            throw new Error("to cannot be null.");
+        let key = from.name + "." + to.name;
+        this.animationToMixTime[key] = duration;
+    }
+    /** Returns the mix duration to use when changing from the specified animation to the other, or the {@link #defaultMix} if
+      * no mix duration has been set. */
+    getMix(from, to) {
+        let key = from.name + "." + to.name;
+        let value = this.animationToMixTime[key];
+        return value === undefined ? this.defaultMix : value;
+    }
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiQW5pbWF0aW9uU3RhdGVEYXRhLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vc3JjL0FuaW1hdGlvblN0YXRlRGF0YS50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiQUFBQTs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OytFQTJCK0U7QUFPL0UseUdBQXlHO0FBQ3pHLE1BQU0sT0FBTyxrQkFBa0I7SUFTOUIsWUFBYSxZQUEwQjtRQUx2Qyx1QkFBa0IsR0FBc0IsRUFBRSxDQUFDO1FBRTNDLDRGQUE0RjtRQUM1RixlQUFVLEdBQUcsQ0FBQyxDQUFDO1FBR2QsSUFBSSxDQUFDLFlBQVk7WUFBRSxNQUFNLElBQUksS0FBSyxDQUFDLDhCQUE4QixDQUFDLENBQUM7UUFDbkUsSUFBSSxDQUFDLFlBQVksR0FBRyxZQUFZLENBQUM7SUFDbEMsQ0FBQztJQUVEOztvQ0FFZ0M7SUFDaEMsTUFBTSxDQUFFLFFBQWdCLEVBQUUsTUFBYyxFQUFFLFFBQWdCO1FBQ3pELElBQUksSUFBSSxHQUFHLElBQUksQ0FBQyxZQUFZLENBQUMsYUFBYSxDQUFDLFFBQVEsQ0FBQyxDQUFDO1FBQ3JELElBQUksQ0FBQyxJQUFJO1lBQUUsTUFBTSxJQUFJLEtBQUssQ0FBQyx1QkFBdUIsR0FBRyxRQUFRLENBQUMsQ0FBQztRQUMvRCxJQUFJLEVBQUUsR0FBRyxJQUFJLENBQUMsWUFBWSxDQUFDLGFBQWEsQ0FBQyxNQUFNLENBQUMsQ0FBQztRQUNqRCxJQUFJLENBQUMsRUFBRTtZQUFFLE1BQU0sSUFBSSxLQUFLLENBQUMsdUJBQXVCLEdBQUcsTUFBTSxDQUFDLENBQUM7UUFDM0QsSUFBSSxDQUFDLFVBQVUsQ0FBQyxJQUFJLEVBQUUsRUFBRSxFQUFFLFFBQVEsQ0FBQyxDQUFDO0lBQ3JDLENBQUM7SUFFRDs7NkNBRXlDO0lBQ3pDLFVBQVUsQ0FBRSxJQUFlLEVBQUUsRUFBYSxFQUFFLFFBQWdCO1FBQzNELElBQUksQ0FBQyxJQUFJO1lBQUUsTUFBTSxJQUFJLEtBQUssQ0FBQyxzQkFBc0IsQ0FBQyxDQUFDO1FBQ25ELElBQUksQ0FBQyxFQUFFO1lBQUUsTUFBTSxJQUFJLEtBQUssQ0FBQyxvQkFBb0IsQ0FBQyxDQUFDO1FBQy9DLElBQUksR0FBRyxHQUFHLElBQUksQ0FBQyxJQUFJLEdBQUcsR0FBRyxHQUFHLEVBQUUsQ0FBQyxJQUFJLENBQUM7UUFDcEMsSUFBSSxDQUFDLGtCQUFrQixDQUFDLEdBQUcsQ0FBQyxHQUFHLFFBQVEsQ0FBQztJQUN6QyxDQUFDO0lBRUQ7d0NBQ29DO0lBQ3BDLE1BQU0sQ0FBRSxJQUFlLEVBQUUsRUFBYTtRQUNyQyxJQUFJLEdBQUcsR0FBRyxJQUFJLENBQUMsSUFBSSxHQUFHLEdBQUcsR0FBRyxFQUFFLENBQUMsSUFBSSxDQUFDO1FBQ3BDLElBQUksS0FBSyxHQUFHLElBQUksQ0FBQyxrQkFBa0IsQ0FBQyxHQUFHLENBQUMsQ0FBQztRQUN6QyxPQUFPLEtBQUssS0FBSyxTQUFTLENBQUMsQ0FBQyxDQUFDLElBQUksQ0FBQyxVQUFVLENBQUMsQ0FBQyxDQUFDLEtBQUssQ0FBQztJQUN0RCxDQUFDO0NBQ0QifQ==

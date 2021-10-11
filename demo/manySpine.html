@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<head>
+  <meta charset="utf-8"/>
+  <!--  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,minimum-scale=1,user-scalable=0"/>-->
+  <meta name="viewport"
+        content="width=device-width,initial-scale=0.5,maximum-scale=0.5,minimum-scale=0.5,user-scalable=0"/>
+  <title>index</title>
+  <link href="style.css" media="all" rel="stylesheet"/>
+</head>
+<body>
+<div id="test"></div>
+<pre><code class="brush:csx"></code></pre>
+<script type="text/jsx">
+  let root = karas.render(
+    <canvas width="900" height="900">
+      <Spine ref="spine"
+        style={{scale: 0.3, position: "absolute", width: 250, height: 250}}
+        onEnd={(a)=>{console.log(a, 'end')}}
+        onStart={(a)=>{console.log(a, 'start')}}
+        onLoop={(a, l)=>{console.log(a, l, 'loop')}}
+        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
+        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
+        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
+
+        <Spine ref="spine2"
+        animation="run"
+        style={{scale: 0.3, left: 300, position: "absolute", width: 250, height: 250}}
+        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
+        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
+        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
+
+        <Spine ref="spine3"
+        animation="shoot"
+        style={{scale: 0.3, left: 600, position: "absolute", width: 250, height: 250}}
+        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
+        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
+        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
+
+        <Spine ref="spine4"
+        animation="jump"
+        style={{scale: 0.3, top: 600, position: "absolute", width: 250, height: 250}}
+        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
+        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
+        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
+
+        <Spine ref="spine4"
+        animation="walk"
+        style={{scale: 0.3, top: 300, left: 300, position: "absolute", width: 250, height: 250}}
+        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
+        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
+        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
+        
+        <Spine ref="spine5"
+        animation="death"
+        style={{scale: 0.3, top: 600, left: 600, position: "absolute", width: 250, height: 250}}
+        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
+        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
+        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
+    </canvas>,
+    '#test'
+  );
+
+  let spine = root.ref.spine;
+  console.log(spine);
+  // spine.playAnimation('run');
+  // spine.playAnimation('death', 1);
+
+
+  
+</script>
+<script src="./homunculus.js"></script>
+<script src="./yurine.js"></script>
+<script src="./sea.js"></script>
+<script src="./karas.js"></script>
+<script src="../index.js"></script>
+<script>
+  seajs.config({
+    alias: {},
+  });
+  define('fs', {});
+  seajs.use(['jssc'], function(jssc) {
+    var code = document.querySelector('pre code');
+    var jsx = document.querySelector('script[type="text/jsx"]');
+    var source = jsx.textContent || jsx.text;
+    source = source.trim().replace(/\n[ ]{2}/g, '\n');
+    var text = document.createTextNode(source);
+    code.appendChild(text);
+    jssc.exec();
+    var head = document.head || document.getElementsByTagName('head')[0];
+    var jsx = document.querySelectorAll('script');
+    for(var i = 0, len = jsx.length; i < len; i++) {
+      var node = jsx[i];
+      if(node.getAttribute('type') === 'text/jsx' && !node.getAttribute('yurine')) {
+        node.setAttribute('yurine', 1);
+        var code = node.textContent || node.text;
+        if(!code) {
+          continue;
+        }
+        code = yurine.parse(code);
+        var script = document.createElement('script');
+        script.async = true;
+        script.text = code;
+        head.appendChild(script);
+      }
+    }
+  });
+</script>
+</body>
+</html>

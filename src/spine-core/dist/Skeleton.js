@@ -1,0 +1,571 @@
+/******************************************************************************
+ * Spine Runtimes License Agreement
+ * Last updated January 1, 2020. Replaces all prior versions.
+ *
+ * Copyright (c) 2013-2020, Esoteric Software LLC
+ *
+ * Integration of the Spine Runtimes into software or otherwise creating
+ * derivative works of the Spine Runtimes is permitted under the terms and
+ * conditions of Section 2 of the Spine Editor License Agreement:
+ * http://esotericsoftware.com/spine-editor-license
+ *
+ * Otherwise, it is permitted to integrate the Spine Runtimes into software
+ * or otherwise create derivative works of the Spine Runtimes (collectively,
+ * "Products"), provided that each user of the Products must obtain their own
+ * Spine Editor license and redistribution of the Products in any form must
+ * include this license and copyright notice.
+ *
+ * THE SPINE RUNTIMES ARE PROVIDED BY ESOTERIC SOFTWARE LLC "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL ESOTERIC SOFTWARE LLC BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES,
+ * BUSINESS INTERRUPTION, OR LOSS OF USE, DATA, OR PROFITS) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THE SPINE RUNTIMES, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *****************************************************************************/
+import { MeshAttachment } from "./attachments/MeshAttachment";
+import { PathAttachment } from "./attachments/PathAttachment";
+import { RegionAttachment } from "./attachments/RegionAttachment";
+import { Bone } from "./Bone";
+import { IkConstraint } from "./IkConstraint";
+import { PathConstraint } from "./PathConstraint";
+import { Slot } from "./Slot";
+import { TransformConstraint } from "./TransformConstraint";
+import { Color, Utils, MathUtils } from "./Utils";
+/** Stores the current pose for a skeleton.
+ *
+ * See [Instance objects](http://esotericsoftware.com/spine-runtime-architecture#Instance-objects) in the Spine Runtimes Guide. */
+export class Skeleton {
+    constructor(data) {
+        /** The list of bones and constraints, sorted in the order they should be updated, as computed by {@link #updateCache()}. */
+        this._updateCache = new Array();
+        /** Returns the skeleton's time. This can be used for tracking, such as with Slot {@link Slot#attachmentTime}.
+         * <p>
+         * See {@link #update()}. */
+        this.time = 0;
+        /** Scales the entire skeleton on the X axis. This affects all bones, even if the bone's transform mode disallows scale
+          * inheritance. */
+        this.scaleX = 1;
+        /** Scales the entire skeleton on the Y axis. This affects all bones, even if the bone's transform mode disallows scale
+          * inheritance. */
+        this.scaleY = 1;
+        /** Sets the skeleton X position, which is added to the root bone worldX position. */
+        this.x = 0;
+        /** Sets the skeleton Y position, which is added to the root bone worldY position. */
+        this.y = 0;
+        if (!data)
+            throw new Error("data cannot be null.");
+        this.data = data;
+        this.bones = new Array();
+        for (let i = 0; i < data.bones.length; i++) {
+            let boneData = data.bones[i];
+            let bone;
+            if (!boneData.parent)
+                bone = new Bone(boneData, this, null);
+            else {
+                let parent = this.bones[boneData.parent.index];
+                bone = new Bone(boneData, this, parent);
+                parent.children.push(bone);
+            }
+            this.bones.push(bone);
+        }
+        this.slots = new Array();
+        this.drawOrder = new Array();
+        for (let i = 0; i < data.slots.length; i++) {
+            let slotData = data.slots[i];
+            let bone = this.bones[slotData.boneData.index];
+            let slot = new Slot(slotData, bone);
+            this.slots.push(slot);
+            this.drawOrder.push(slot);
+        }
+        this.ikConstraints = new Array();
+        for (let i = 0; i < data.ikConstraints.length; i++) {
+            let ikConstraintData = data.ikConstraints[i];
+            this.ikConstraints.push(new IkConstraint(ikConstraintData, this));
+        }
+        this.transformConstraints = new Array();
+        for (let i = 0; i < data.transformConstraints.length; i++) {
+            let transformConstraintData = data.transformConstraints[i];
+            this.transformConstraints.push(new TransformConstraint(transformConstraintData, this));
+        }
+        this.pathConstraints = new Array();
+        for (let i = 0; i < data.pathConstraints.length; i++) {
+            let pathConstraintData = data.pathConstraints[i];
+            this.pathConstraints.push(new PathConstraint(pathConstraintData, this));
+        }
+        this.color = new Color(1, 1, 1, 1);
+        this.updateCache();
+    }
+    /** Caches information about bones and constraints. Must be called if the {@link #getSkin()} is modified or if bones,
+     * constraints, or weighted path attachments are added or removed. */
+    updateCache() {
+        let updateCache = this._updateCache;
+        updateCache.length = 0;
+        let bones = this.bones;
+        for (let i = 0, n = bones.length; i < n; i++) {
+            let bone = bones[i];
+            bone.sorted = bone.data.skinRequired;
+            bone.active = !bone.sorted;
+        }
+        if (this.skin) {
+            let skinBones = this.skin.bones;
+            for (let i = 0, n = this.skin.bones.length; i < n; i++) {
+                let bone = this.bones[skinBones[i].index];
+                do {
+                    bone.sorted = false;
+                    bone.active = true;
+                    bone = bone.parent;
+                } while (bone);
+            }
+        }
+        // IK first, lowest hierarchy depth first.
+        let ikConstraints = this.ikConstraints;
+        let transformConstraints = this.transformConstraints;
+        let pathConstraints = this.pathConstraints;
+        let ikCount = ikConstraints.length, transformCount = transformConstraints.length, pathCount = pathConstraints.length;
+        let constraintCount = ikCount + transformCount + pathCount;
+        outer: for (let i = 0; i < constraintCount; i++) {
+            for (let ii = 0; ii < ikCount; ii++) {
+                let constraint = ikConstraints[ii];
+                if (constraint.data.order == i) {
+                    this.sortIkConstraint(constraint);
+                    continue outer;
+                }
+            }
+            for (let ii = 0; ii < transformCount; ii++) {
+                let constraint = transformConstraints[ii];
+                if (constraint.data.order == i) {
+                    this.sortTransformConstraint(constraint);
+                    continue outer;
+                }
+            }
+            for (let ii = 0; ii < pathCount; ii++) {
+                let constraint = pathConstraints[ii];
+                if (constraint.data.order == i) {
+                    this.sortPathConstraint(constraint);
+                    continue outer;
+                }
+            }
+        }
+        for (let i = 0, n = bones.length; i < n; i++)
+            this.sortBone(bones[i]);
+    }
+    sortIkConstraint(constraint) {
+        constraint.active = constraint.target.isActive() && (!constraint.data.skinRequired || (this.skin && Utils.contains(this.skin.constraints, constraint.data, true)));
+        if (!constraint.active)
+            return;
+        let target = constraint.target;
+        this.sortBone(target);
+        let constrained = constraint.bones;
+        let parent = constrained[0];
+        this.sortBone(parent);
+        if (constrained.length == 1) {
+            this._updateCache.push(constraint);
+            this.sortReset(parent.children);
+        }
+        else {
+            let child = constrained[constrained.length - 1];
+            this.sortBone(child);
+            this._updateCache.push(constraint);
+            this.sortReset(parent.children);
+            child.sorted = true;
+        }
+    }
+    sortPathConstraint(constraint) {
+        constraint.active = constraint.target.bone.isActive() && (!constraint.data.skinRequired || (this.skin && Utils.contains(this.skin.constraints, constraint.data, true)));
+        if (!constraint.active)
+            return;
+        let slot = constraint.target;
+        let slotIndex = slot.data.index;
+        let slotBone = slot.bone;
+        if (this.skin)
+            this.sortPathConstraintAttachment(this.skin, slotIndex, slotBone);
+        if (this.data.defaultSkin && this.data.defaultSkin != this.skin)
+            this.sortPathConstraintAttachment(this.data.defaultSkin, slotIndex, slotBone);
+        for (let i = 0, n = this.data.skins.length; i < n; i++)
+            this.sortPathConstraintAttachment(this.data.skins[i], slotIndex, slotBone);
+        let attachment = slot.getAttachment();
+        if (attachment instanceof PathAttachment)
+            this.sortPathConstraintAttachmentWith(attachment, slotBone);
+        let constrained = constraint.bones;
+        let boneCount = constrained.length;
+        for (let i = 0; i < boneCount; i++)
+            this.sortBone(constrained[i]);
+        this._updateCache.push(constraint);
+        for (let i = 0; i < boneCount; i++)
+            this.sortReset(constrained[i].children);
+        for (let i = 0; i < boneCount; i++)
+            constrained[i].sorted = true;
+    }
+    sortTransformConstraint(constraint) {
+        constraint.active = constraint.target.isActive() && (!constraint.data.skinRequired || (this.skin && Utils.contains(this.skin.constraints, constraint.data, true)));
+        if (!constraint.active)
+            return;
+        this.sortBone(constraint.target);
+        let constrained = constraint.bones;
+        let boneCount = constrained.length;
+        if (constraint.data.local) {
+            for (let i = 0; i < boneCount; i++) {
+                let child = constrained[i];
+                this.sortBone(child.parent);
+                this.sortBone(child);
+            }
+        }
+        else {
+            for (let i = 0; i < boneCount; i++) {
+                this.sortBone(constrained[i]);
+            }
+        }
+        this._updateCache.push(constraint);
+        for (let i = 0; i < boneCount; i++)
+            this.sortReset(constrained[i].children);
+        for (let i = 0; i < boneCount; i++)
+            constrained[i].sorted = true;
+    }
+    sortPathConstraintAttachment(skin, slotIndex, slotBone) {
+        let attachments = skin.attachments[slotIndex];
+        if (!attachments)
+            return;
+        for (let key in attachments) {
+            this.sortPathConstraintAttachmentWith(attachments[key], slotBone);
+        }
+    }
+    sortPathConstraintAttachmentWith(attachment, slotBone) {
+        if (!(attachment instanceof PathAttachment))
+            return;
+        let pathBones = attachment.bones;
+        if (!pathBones)
+            this.sortBone(slotBone);
+        else {
+            let bones = this.bones;
+            for (let i = 0, n = pathBones.length; i < n;) {
+                let nn = pathBones[i++];
+                nn += i;
+                while (i < nn)
+                    this.sortBone(bones[pathBones[i++]]);
+            }
+        }
+    }
+    sortBone(bone) {
+        if (bone.sorted)
+            return;
+        let parent = bone.parent;
+        if (parent)
+            this.sortBone(parent);
+        bone.sorted = true;
+        this._updateCache.push(bone);
+    }
+    sortReset(bones) {
+        for (let i = 0, n = bones.length; i < n; i++) {
+            let bone = bones[i];
+            if (!bone.active)
+                continue;
+            if (bone.sorted)
+                this.sortReset(bone.children);
+            bone.sorted = false;
+        }
+    }
+    /** Updates the world transform for each bone and applies all constraints.
+     *
+     * See [World transforms](http://esotericsoftware.com/spine-runtime-skeletons#World-transforms) in the Spine
+     * Runtimes Guide. */
+    updateWorldTransform() {
+        let bones = this.bones;
+        for (let i = 0, n = bones.length; i < n; i++) {
+            let bone = bones[i];
+            bone.ax = bone.x;
+            bone.ay = bone.y;
+            bone.arotation = bone.rotation;
+            bone.ascaleX = bone.scaleX;
+            bone.ascaleY = bone.scaleY;
+            bone.ashearX = bone.shearX;
+            bone.ashearY = bone.shearY;
+        }
+        let updateCache = this._updateCache;
+        for (let i = 0, n = updateCache.length; i < n; i++)
+            updateCache[i].update();
+    }
+    updateWorldTransformWith(parent) {
+        // Apply the parent bone transform to the root bone. The root bone always inherits scale, rotation and reflection.
+        let rootBone = this.getRootBone();
+        let pa = parent.a, pb = parent.b, pc = parent.c, pd = parent.d;
+        rootBone.worldX = pa * this.x + pb * this.y + parent.worldX;
+        rootBone.worldY = pc * this.x + pd * this.y + parent.worldY;
+        let rotationY = rootBone.rotation + 90 + rootBone.shearY;
+        let la = MathUtils.cosDeg(rootBone.rotation + rootBone.shearX) * rootBone.scaleX;
+        let lb = MathUtils.cosDeg(rotationY) * rootBone.scaleY;
+        let lc = MathUtils.sinDeg(rootBone.rotation + rootBone.shearX) * rootBone.scaleX;
+        let ld = MathUtils.sinDeg(rotationY) * rootBone.scaleY;
+        rootBone.a = (pa * la + pb * lc) * this.scaleX;
+        rootBone.b = (pa * lb + pb * ld) * this.scaleX;
+        rootBone.c = (pc * la + pd * lc) * this.scaleY;
+        rootBone.d = (pc * lb + pd * ld) * this.scaleY;
+        // Update everything except root bone.
+        let updateCache = this._updateCache;
+        for (let i = 0, n = updateCache.length; i < n; i++) {
+            let updatable = updateCache[i];
+            if (updatable != rootBone)
+                updatable.update();
+        }
+    }
+    /** Sets the bones, constraints, and slots to their setup pose values. */
+    setToSetupPose() {
+        this.setBonesToSetupPose();
+        this.setSlotsToSetupPose();
+    }
+    /** Sets the bones and constraints to their setup pose values. */
+    setBonesToSetupPose() {
+        let bones = this.bones;
+        for (let i = 0, n = bones.length; i < n; i++)
+            bones[i].setToSetupPose();
+        let ikConstraints = this.ikConstraints;
+        for (let i = 0, n = ikConstraints.length; i < n; i++) {
+            let constraint = ikConstraints[i];
+            constraint.mix = constraint.data.mix;
+            constraint.softness = constraint.data.softness;
+            constraint.bendDirection = constraint.data.bendDirection;
+            constraint.compress = constraint.data.compress;
+            constraint.stretch = constraint.data.stretch;
+        }
+        let transformConstraints = this.transformConstraints;
+        for (let i = 0, n = transformConstraints.length; i < n; i++) {
+            let constraint = transformConstraints[i];
+            let data = constraint.data;
+            constraint.mixRotate = data.mixRotate;
+            constraint.mixX = data.mixX;
+            constraint.mixY = data.mixY;
+            constraint.mixScaleX = data.mixScaleX;
+            constraint.mixScaleY = data.mixScaleY;
+            constraint.mixShearY = data.mixShearY;
+        }
+        let pathConstraints = this.pathConstraints;
+        for (let i = 0, n = pathConstraints.length; i < n; i++) {
+            let constraint = pathConstraints[i];
+            let data = constraint.data;
+            constraint.position = data.position;
+            constraint.spacing = data.spacing;
+            constraint.mixRotate = data.mixRotate;
+            constraint.mixX = data.mixX;
+            constraint.mixY = data.mixY;
+        }
+    }
+    /** Sets the slots and draw order to their setup pose values. */
+    setSlotsToSetupPose() {
+        let slots = this.slots;
+        Utils.arrayCopy(slots, 0, this.drawOrder, 0, slots.length);
+        for (let i = 0, n = slots.length; i < n; i++)
+            slots[i].setToSetupPose();
+    }
+    /** @returns May return null. */
+    getRootBone() {
+        if (this.bones.length == 0)
+            return null;
+        return this.bones[0];
+    }
+    /** @returns May be null. */
+    findBone(boneName) {
+        if (!boneName)
+            throw new Error("boneName cannot be null.");
+        let bones = this.bones;
+        for (let i = 0, n = bones.length; i < n; i++) {
+            let bone = bones[i];
+            if (bone.data.name == boneName)
+                return bone;
+        }
+        return null;
+    }
+    /** Finds a slot by comparing each slot's name. It is more efficient to cache the results of this method than to call it
+     * repeatedly.
+     * @returns May be null. */
+    findSlot(slotName) {
+        if (!slotName)
+            throw new Error("slotName cannot be null.");
+        let slots = this.slots;
+        for (let i = 0, n = slots.length; i < n; i++) {
+            let slot = slots[i];
+            if (slot.data.name == slotName)
+                return slot;
+        }
+        return null;
+    }
+    /** Sets a skin by name.
+     *
+     * See {@link #setSkin()}. */
+    setSkinByName(skinName) {
+        let skin = this.data.findSkin(skinName);
+        if (!skin)
+            throw new Error("Skin not found: " + skinName);
+        this.setSkin(skin);
+    }
+    /** Sets the skin used to look up attachments before looking in the {@link SkeletonData#defaultSkin default skin}. If the
+     * skin is changed, {@link #updateCache()} is called.
+     *
+     * Attachments from the new skin are attached if the corresponding attachment from the old skin was attached. If there was no
+     * old skin, each slot's setup mode attachment is attached from the new skin.
+     *
+     * After changing the skin, the visible attachments can be reset to those attached in the setup pose by calling
+     * {@link #setSlotsToSetupPose()}. Also, often {@link AnimationState#apply()} is called before the next time the
+     * skeleton is rendered to allow any attachment keys in the current animation(s) to hide or show attachments from the new skin.
+     * @param newSkin May be null. */
+    setSkin(newSkin) {
+        if (newSkin == this.skin)
+            return;
+        if (newSkin) {
+            if (this.skin)
+                newSkin.attachAll(this, this.skin);
+            else {
+                let slots = this.slots;
+                for (let i = 0, n = slots.length; i < n; i++) {
+                    let slot = slots[i];
+                    let name = slot.data.attachmentName;
+                    if (name) {
+                        let attachment = newSkin.getAttachment(i, name);
+                        if (attachment)
+                            slot.setAttachment(attachment);
+                    }
+                }
+            }
+        }
+        this.skin = newSkin;
+        this.updateCache();
+    }
+    /** Finds an attachment by looking in the {@link #skin} and {@link SkeletonData#defaultSkin} using the slot name and attachment
+     * name.
+     *
+     * See {@link #getAttachment()}.
+     * @returns May be null. */
+    getAttachmentByName(slotName, attachmentName) {
+        return this.getAttachment(this.data.findSlot(slotName).index, attachmentName);
+    }
+    /** Finds an attachment by looking in the {@link #skin} and {@link SkeletonData#defaultSkin} using the slot index and
+     * attachment name. First the skin is checked and if the attachment was not found, the default skin is checked.
+     *
+     * See [Runtime skins](http://esotericsoftware.com/spine-runtime-skins) in the Spine Runtimes Guide.
+     * @returns May be null. */
+    getAttachment(slotIndex, attachmentName) {
+        if (!attachmentName)
+            throw new Error("attachmentName cannot be null.");
+        if (this.skin) {
+            let attachment = this.skin.getAttachment(slotIndex, attachmentName);
+            if (attachment)
+                return attachment;
+        }
+        if (this.data.defaultSkin)
+            return this.data.defaultSkin.getAttachment(slotIndex, attachmentName);
+        return null;
+    }
+    /** A convenience method to set an attachment by finding the slot with {@link #findSlot()}, finding the attachment with
+     * {@link #getAttachment()}, then setting the slot's {@link Slot#attachment}.
+     * @param attachmentName May be null to clear the slot's attachment. */
+    setAttachment(slotName, attachmentName) {
+        if (!slotName)
+            throw new Error("slotName cannot be null.");
+        let slots = this.slots;
+        for (let i = 0, n = slots.length; i < n; i++) {
+            let slot = slots[i];
+            if (slot.data.name == slotName) {
+                let attachment = null;
+                if (attachmentName) {
+                    attachment = this.getAttachment(i, attachmentName);
+                    if (!attachment)
+                        throw new Error("Attachment not found: " + attachmentName + ", for slot: " + slotName);
+                }
+                slot.setAttachment(attachment);
+                return;
+            }
+        }
+        throw new Error("Slot not found: " + slotName);
+    }
+    /** Finds an IK constraint by comparing each IK constraint's name. It is more efficient to cache the results of this method
+     * than to call it repeatedly.
+     * @return May be null. */
+    findIkConstraint(constraintName) {
+        if (!constraintName)
+            throw new Error("constraintName cannot be null.");
+        let ikConstraints = this.ikConstraints;
+        for (let i = 0, n = ikConstraints.length; i < n; i++) {
+            let ikConstraint = ikConstraints[i];
+            if (ikConstraint.data.name == constraintName)
+                return ikConstraint;
+        }
+        return null;
+    }
+    /** Finds a transform constraint by comparing each transform constraint's name. It is more efficient to cache the results of
+     * this method than to call it repeatedly.
+     * @return May be null. */
+    findTransformConstraint(constraintName) {
+        if (!constraintName)
+            throw new Error("constraintName cannot be null.");
+        let transformConstraints = this.transformConstraints;
+        for (let i = 0, n = transformConstraints.length; i < n; i++) {
+            let constraint = transformConstraints[i];
+            if (constraint.data.name == constraintName)
+                return constraint;
+        }
+        return null;
+    }
+    /** Finds a path constraint by comparing each path constraint's name. It is more efficient to cache the results of this method
+     * than to call it repeatedly.
+     * @return May be null. */
+    findPathConstraint(constraintName) {
+        if (!constraintName)
+            throw new Error("constraintName cannot be null.");
+        let pathConstraints = this.pathConstraints;
+        for (let i = 0, n = pathConstraints.length; i < n; i++) {
+            let constraint = pathConstraints[i];
+            if (constraint.data.name == constraintName)
+                return constraint;
+        }
+        return null;
+    }
+    /** Returns the axis aligned bounding box (AABB) of the region and mesh attachments for the current pose.
+     * @param offset An output value, the distance from the skeleton origin to the bottom left corner of the AABB.
+     * @param size An output value, the width and height of the AABB.
+     * @param temp Working memory to temporarily store attachments' computed world vertices. */
+    getBounds(offset, size, temp = new Array(2)) {
+        if (!offset)
+            throw new Error("offset cannot be null.");
+        if (!size)
+            throw new Error("size cannot be null.");
+        let drawOrder = this.drawOrder;
+        let minX = Number.POSITIVE_INFINITY, minY = Number.POSITIVE_INFINITY, maxX = Number.NEGATIVE_INFINITY, maxY = Number.NEGATIVE_INFINITY;
+        for (let i = 0, n = drawOrder.length; i < n; i++) {
+            let slot = drawOrder[i];
+            if (!slot.bone.active)
+                continue;
+            let verticesLength = 0;
+            let vertices = null;
+            let attachment = slot.getAttachment();
+            if (attachment instanceof RegionAttachment) {
+                verticesLength = 8;
+                vertices = Utils.setArraySize(temp, verticesLength, 0);
+                attachment.computeWorldVertices(slot.bone, vertices, 0, 2);
+            }
+            else if (attachment instanceof MeshAttachment) {
+                let mesh = attachment;
+                verticesLength = mesh.worldVerticesLength;
+                vertices = Utils.setArraySize(temp, verticesLength, 0);
+                mesh.computeWorldVertices(slot, 0, verticesLength, vertices, 0, 2);
+            }
+            if (vertices) {
+                for (let ii = 0, nn = vertices.length; ii < nn; ii += 2) {
+                    let x = vertices[ii], y = vertices[ii + 1];
+                    minX = Math.min(minX, x);
+                    minY = Math.min(minY, y);
+                    maxX = Math.max(maxX, x);
+                    maxY = Math.max(maxY, y);
+                }
+            }
+        }
+        offset.set(minX, minY);
+        size.set(maxX - minX, maxY - minY);
+    }
+    /** Increments the skeleton's {@link #time}. */
+    update(delta) {
+        this.time += delta;
+    }
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiU2tlbGV0b24uanMiLCJzb3VyY2VSb290IjoiIiwic291cmNlcyI6WyIuLi9zcmMvU2tlbGV0b24udHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6IkFBQUE7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7Ozs7OzsrRUEyQitFO0FBRy9FLE9BQU8sRUFBRSxjQUFjLEVBQUUsTUFBTSw4QkFBOEIsQ0FBQztBQUM5RCxPQUFPLEVBQUUsY0FBYyxFQUFFLE1BQU0sOEJBQThCLENBQUM7QUFDOUQsT0FBTyxFQUFFLGdCQUFnQixFQUFFLE1BQU0sZ0NBQWdDLENBQUM7QUFDbEUsT0FBTyxFQUFFLElBQUksRUFBRSxNQUFNLFFBQVEsQ0FBQztBQUM5QixPQUFPLEVBQUUsWUFBWSxFQUFFLE1BQU0sZ0JBQWdCLENBQUM7QUFDOUMsT0FBTyxFQUFFLGNBQWMsRUFBRSxNQUFNLGtCQUFrQixDQUFDO0FBR2xELE9BQU8sRUFBRSxJQUFJLEVBQUUsTUFBTSxRQUFRLENBQUM7QUFDOUIsT0FBTyxFQUFFLG1CQUFtQixFQUFFLE1BQU0sdUJBQXVCLENBQUM7QUFFNUQsT0FBTyxFQUFFLEtBQUssRUFBRSxLQUFLLEVBQUUsU0FBUyxFQUE0QixNQUFNLFNBQVMsQ0FBQztBQUU1RTs7a0lBRWtJO0FBQ2xJLE1BQU0sT0FBTyxRQUFRO0lBa0RwQixZQUFhLElBQWtCO1FBNUIvQiw0SEFBNEg7UUFDNUgsaUJBQVksR0FBRyxJQUFJLEtBQUssRUFBYSxDQUFDO1FBUXRDOztvQ0FFNEI7UUFDNUIsU0FBSSxHQUFHLENBQUMsQ0FBQztRQUVUOzJCQUNtQjtRQUNuQixXQUFNLEdBQUcsQ0FBQyxDQUFDO1FBRVg7MkJBQ21CO1FBQ25CLFdBQU0sR0FBRyxDQUFDLENBQUM7UUFFWCxxRkFBcUY7UUFDckYsTUFBQyxHQUFHLENBQUMsQ0FBQztRQUVOLHFGQUFxRjtRQUNyRixNQUFDLEdBQUcsQ0FBQyxDQUFDO1FBR0wsSUFBSSxDQUFDLElBQUk7WUFBRSxNQUFNLElBQUksS0FBSyxDQUFDLHNCQUFzQixD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
