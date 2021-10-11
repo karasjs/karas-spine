@@ -46,23 +46,32 @@ console.log(spine);
 ### props
 #### 必填的props字段
 atlas: atlas文件url
+
 json：json文件的url
+
 image：图片url
 
 #### 选填的props字段
 onEnd：播放结束事件
+
 onStart： 开始播放事件
+
 onLoop：每次循环播放触发一次
+
 animation 动画名称。改这个字段切换不同动画播放。默认是idle
+
 skin 皮肤名称。可以切换皮肤。默认是default
+
 loopCount 重复次数。默认无限重复
 
 debug 是否开启debug模式查看每个零件的方框
+
 triangle 以三角形方式绘制
 
 ### TODO
 
 调节播放速度
+
 兼容旧版本spine的json格式
 
 
