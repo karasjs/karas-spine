@@ -94,7 +94,7 @@ export default class Spine extends karas.Component {
       iterations: Infinity,
     });
 
-    fake.render = (renderMode, lv, ctx) => {
+    fake.render = (renderMode, lv, ctx, cache, dx = 0, dy = 0) => {
       if (!this.bounds) {
         return
       }
@@ -114,7 +114,7 @@ export default class Spine extends karas.Component {
       this.lastTime = this.currentTime;
       // matrix4转matrix2_3
       // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
-      ctx.translate(fake.sx, fake.sy);
+      ctx.translate(fake.sx + dx, fake.sy + dy);
       let scale = 1;
       if (fitSize) {
         let scx = width / size.width;

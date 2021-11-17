@@ -10972,7 +10972,10 @@ var Spine = /*#__PURE__*/function (_karas$Component) {
         iterations: Infinity
       });
 
-      fake.render = function (renderMode, lv, ctx) {
+      fake.render = function (renderMode, lv, ctx, cache) {
+        var dx = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
+        var dy = arguments.length > 5 && arguments[5] !== undefined ? arguments[5] : 0;
+
         if (!_this2.bounds) {
           return;
         }
@@ -10992,7 +10995,7 @@ var Spine = /*#__PURE__*/function (_karas$Component) {
         _this2.lastTime = _this2.currentTime; // matrix4转matrix2_3
         // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
 
-        ctx.translate(fake.sx, fake.sy);
+        ctx.translate(fake.sx + dx, fake.sy + dy);
         var scale = 1;
 
         if (fitSize) {
