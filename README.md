@@ -8,7 +8,7 @@ karas spine插件。
 
 由于spine的官方解析逻辑没有兼容旧版本spine，所以本插件目前只支持3.8和4以上的版本。使用3.6版本的spine可能会在解析时候报错或者无法正确拿到动画数据情况。
 
-[![NPM version](https://img.shields.io/npm/v/karas.svg)](https://npmjs.org/package/karas)
+[![NPM version](https://img.shields.io/npm/v/karas-spine.svg)](https://npmjs.org/package/karas-spine)
 
 ## Install
 ```
