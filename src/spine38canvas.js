@@ -1,14 +1,19 @@
 // karas画mesh的插件
 import karas from 'karas';
-import { SkeletonRenderer } from './spine-canvas/SkeletonRenderer';
-import { AssetManager } from './spine-canvas/AssetManager';
-import { TextureAtlas } from './spine-core/TextureAtlas';
-import { AtlasAttachmentLoader } from './spine-core/AtlasAttachmentLoader';
-import { SkeletonJson } from './spine-core/SkeletonJson';
-import { Skeleton } from './spine-core/Skeleton';
-import { Vector2 } from './spine-core/Utils';
-import { AnimationState } from './spine-core/AnimationState';
-import { AnimationStateData } from './spine-core/AnimationStateData';
+// import { SkeletonRenderer } from './spine-canvas/SkeletonRenderer';
+// import { AssetManager } from './spine-canvas/AssetManager';
+// import { TextureAtlas } from './spine-core/TextureAtlas';
+// import { AtlasAttachmentLoader } from './spine-core/AtlasAttachmentLoader';
+// import { SkeletonJson } from './spine-core/SkeletonJson';
+// import { Skeleton } from './spine-core/Skeleton';
+// import { Vector2 } from './spine-core/Utils';
+// import { AnimationState } from './spine-core/AnimationState';
+// import { AnimationStateData } from './spine-core/AnimationStateData';
+import SpineCanvas from './spine-canvas';
+
+const { TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData } = SpineCanvas;
+const { SkeletonRenderer, AssetManager } = SpineCanvas.canvas;
+
 
 // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 const GlobalSpineRendererMap = new WeakMap();
@@ -27,7 +32,7 @@ const GlobalSpineRendererMap = new WeakMap();
  * onEnd 动画播放完毕的事件
  * debugger
  */
-export default class Spine40 extends karas.Component {
+export default class Spine38Canvas extends karas.Component {
 
   verticesData = [];
   renderer = null;
@@ -52,8 +57,8 @@ export default class Spine40 extends karas.Component {
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
     this.loopCount = loop;
-    console.log(animationName);
     let data = this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+
     this.state = data.state;
     this.skeleton = data.skeleton;
     this.bounds = data.bounds;
@@ -67,7 +72,21 @@ export default class Spine40 extends karas.Component {
     this.assetManager = new AssetManager();
     this.assetManager.loadText(this.props.atlas);
     this.assetManager.loadText(this.props.json);
-    this.assetManager.loadTexture(this.props.image);
+    if (typeof this.props.image === 'string') {
+      this.assetManager.loadTexture(this.props.image);
+    } else {
+      for (let item of this.props.image) {
+        this.assetManager.loadTexture(item);
+      }
+    }
+
+    let i = setInterval(() => {
+      if (this.assetManager.isLoadingComplete()) {
+        clearInterval(i);
+        this.props.onLoad?.();
+        this.playAnimation();
+      }
+    }, 1000);
   }
 
   initRender(ctx) {
@@ -75,6 +94,7 @@ export default class Spine40 extends karas.Component {
     this.renderer = GlobalSpineRendererMap.get(this.ctx);
     if (!this.renderer) {
       this.renderer = new SkeletonRenderer(ctx);
+      this.renderer.triangleRendering = true;
       GlobalSpineRendererMap.set(this.ctx, this.renderer);
     }
   }
@@ -83,7 +103,7 @@ export default class Spine40 extends karas.Component {
     let fake = this.ref.fake;
     fake.clearAnimate();
 
-    fake.animate([
+    this.animation = fake.animate([
       {
         backgroundColor: '#000',
       },
@@ -91,6 +111,7 @@ export default class Spine40 extends karas.Component {
         backgroundColor: '#fff',
       },
     ], {
+      fps: this.props.fps || 60,
       duration: 10000,
       iterations: Infinity,
     });
@@ -134,10 +155,10 @@ export default class Spine40 extends karas.Component {
         this.initRender(ctx);
       }
       if (this.isParsed) {
-        if(this.props.debug) {
+        if (this.props.debug) {
           this.renderer.debugRendering = true;
         }
-        if(this.props.triangle) {
+        if (this.props.triangle) {
           this.renderer.triangleRendering = true;
         }
         this.state.update(delta);
@@ -146,20 +167,21 @@ export default class Spine40 extends karas.Component {
         this.renderer.draw(this.skeleton);
       }
       // debugger
+      this.props.onFrame?.();
     };
   }
 
   loadSkeleton(initialAnimation, skin) {
     if (skin === undefined) skin = "default";
     let assetManager = this.assetManager;
-    let atlas = new TextureAtlas(assetManager.require(this.props.atlas));
-    atlas.setTextures(assetManager, this.props.image);
+    let atlas = new TextureAtlas(assetManager.get(this.props.atlas), (path) => {
+      return assetManager.get(path);
+    });
 
     let atlasLoader = new AtlasAttachmentLoader(atlas);
     var skeletonJson = new SkeletonJson(atlasLoader);
 
-    console.log(this.props.json, assetManager, assetManager.require(this.props.json))
-    var skeletonData = skeletonJson.readSkeletonData(assetManager.require(this.props.json));
+    var skeletonData = skeletonJson.readSkeletonData(assetManager.get(this.props.json));
     var skeleton = new Skeleton(skeletonData);
     skeleton.scaleY = -1;
     var bounds = calculateBounds(skeleton);
@@ -178,6 +200,7 @@ export default class Spine40 extends karas.Component {
           animationState.setAnimation(0, initialAnimation, 0);
         } else {
           this.props.onEnd?.(initialAnimation);
+          animationState.setAnimation(0, this.props.animation, 0);
         }
       },
     })
@@ -186,12 +209,33 @@ export default class Spine40 extends karas.Component {
   }
 
   render() {
-    return <div ref="mesh" style={this.props.style || {}}>
-      <$polyline ref="fake" style={{
-        width: '100%',
-        height: '100%',
-      }} />
-    </div>;;
+    return karas.parse({
+      tagName: 'div',
+      props: {
+        style: {
+          ...(this.props.style || {})
+        },
+        ref: "mesh"
+      },
+      children: [
+        {
+          tagName: '$polygon',
+          props: {
+            ref: "fake",
+            style: {
+              width: '100%',
+              height: '100%',
+            }
+          }
+        }
+      ]
+    });
+    // return <div ref="mesh" style={this.props.style || {}}>
+    //   <$polyline ref="fake" style={{
+    //     width: '100%',
+    //     height: '100%',
+    //   }} />
+    // </div>;;
   }
 }
 

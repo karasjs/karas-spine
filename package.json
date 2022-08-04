@@ -17,7 +17,7 @@
     "url": "git://github.com/karasjs/karas-spine.git"
   },
   "peerDependencies": {
-    "karas": "^0.62.4"
+    "karas": "^0.78.1"
   },
   "devDependencies": {
     "@babel/core": "^7.15.8",
