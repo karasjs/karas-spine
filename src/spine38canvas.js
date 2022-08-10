@@ -165,6 +165,15 @@ export default class Spine38Canvas extends karas.Component {
         this.state.apply(this.skeleton);
         this.skeleton.updateWorldTransform();
         this.renderer.draw(this.skeleton);
+        let repeatRender = this.props.repeatRender;
+        if(repeatRender) {
+          this.renderer.draw(this.skeleton);
+          let n = parseInt(repeatRender) || 0;
+          while(n > 1) {
+            n--;
+            this.renderer.draw(this.skeleton);
+          }
+        }
       }
       // debugger
       this.props.onFrame?.();

@@ -23410,6 +23410,20 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
           _this3.skeleton.updateWorldTransform();
 
           _this3.renderer.draw(_this3.skeleton);
+
+          var repeatRender = _this3.props.repeatRender;
+
+          if (repeatRender) {
+            _this3.renderer.draw(_this3.skeleton);
+
+            var n = parseInt(repeatRender) || 0;
+
+            while (n > 1) {
+              n--;
+
+              _this3.renderer.draw(_this3.skeleton);
+            }
+          }
         } // debugger
 
 
