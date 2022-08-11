@@ -205,6 +205,7 @@ export default class Spine38WebGL extends karas.Component {
     var animationStateData = new AnimationStateData(this.skeleton.data);
     var animationState = new AnimationState(animationStateData);
     animationState.setAnimation(0, initialAnimation, true);
+    this.props.onStart?.(initialAnimation, this.loopCount);
     animationState.addListener({
       complete: () => {
         this.loopCount--;

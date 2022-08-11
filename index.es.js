@@ -13186,7 +13186,9 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
-      var _this4 = this;
+      var _this$props$onStart,
+          _this$props,
+          _this4 = this;
 
       if (skin === undefined) skin = "default"; // Load the texture atlas using name.atlas from the AssetManager.
 
@@ -13204,6 +13206,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var animationStateData = new AnimationStateData$1(this.skeleton.data);
       var animationState = new AnimationState$1(animationStateData);
       animationState.setAnimation(0, initialAnimation, true);
+      (_this$props$onStart = (_this$props = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props, initialAnimation, this.loopCount);
       animationState.addListener({
         complete: function complete() {
           var _this4$props$onLoop, _this4$props;
@@ -23518,5 +23521,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-export { Spine38Canvas, Spine38WebGL };
+var version = "0.2.1";
+
+export { Spine38Canvas, Spine38WebGL, version };
 //# sourceMappingURL=index.es.js.map
