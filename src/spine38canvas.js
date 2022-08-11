@@ -116,9 +116,15 @@ export default class Spine38Canvas extends karas.Component {
       iterations: Infinity,
     });
 
+    let isRender, self = this;
+
     fake.render = (renderMode, lv, ctx) => {
       if (!this.bounds) {
         return
+      }
+      if(!isRender) {
+        isRender = true;
+        self.props.onRender?.();
       }
       let fitSize = this.props.fitSize;
       let size = fake.getComputedStyle(['width', 'height']);

@@ -13136,6 +13136,8 @@
         });
         var texCache = this.root.texCache;
         var unit = texCache.lockOneChannel();
+        var isRender,
+            self = this;
 
         fake.render = function (renderMode, lv, ctx) {
           var _this3$props$style$sc, _this3$props$style, _this3$props$style$sc2, _this3$props$style2, _this3$props$onFrame, _this3$props;
@@ -13146,6 +13148,13 @@
 
           if (!_this3.bounds) {
             return;
+          }
+
+          if (!isRender) {
+            var _self$props$onRender, _self$props;
+
+            isRender = true;
+            (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
           }
 
           _this3.resize(ctx.canvas, ctx);
@@ -23361,12 +23370,21 @@
           duration: 10000,
           iterations: Infinity
         });
+        var isRender,
+            self = this;
 
         fake.render = function (renderMode, lv, ctx) {
           var _this3$props$onFrame, _this3$props;
 
           if (!_this3.bounds) {
             return;
+          }
+
+          if (!isRender) {
+            var _self$props$onRender, _self$props;
+
+            isRender = true;
+            (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
           }
 
           var fitSize = _this3.props.fitSize;
@@ -23529,7 +23547,7 @@
     };
   }
 
-  var version = "0.2.1";
+  var version = "0.2.2";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

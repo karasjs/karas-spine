@@ -135,12 +135,18 @@ export default class Spine38WebGL extends karas.Component {
     let texCache = this.root.texCache;
     let unit = texCache.lockOneChannel();
 
+    let isRender, self = this;
+
     fake.render = (renderMode, lv, ctx) => {
       if (!this.renderer) {
         this.initRender(ctx, unit);
       }
       if (!this.bounds) {
         return
+      }
+      if(!isRender) {
+        isRender = true;
+        self.props.onRender?.();
       }
       this.resize(ctx.canvas, ctx);
       let size = fake.getComputedStyle(['width', 'height']);
