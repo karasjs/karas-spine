@@ -4,5 +4,5 @@ import Spine38Canvas from './spine38canvas';
 
 import { version } from '../package.json';
 
-export { version, Spine38WebGL, Spine38Canvas };
+export { version, Spine38WebGL, Spine38Canvas, Spine38WebGL as Spine38Webgl };
 

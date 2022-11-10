@@ -14,9 +14,18 @@ import SpineCanvas from './spine-canvas';
 const { TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData } = SpineCanvas;
 const { SkeletonRenderer, AssetManager } = SpineCanvas.canvas;
 
-
 // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 const GlobalSpineRendererMap = new WeakMap();
+
+class $ extends karas.Geom {
+  calContent(currentStyle, computedStyle) {
+    let res = super.calContent(currentStyle, computedStyle);
+    if(res) {
+      return res;
+    }
+    return true;
+  }
+}
 
 /**
  * props参数介绍：
@@ -101,24 +110,14 @@ export default class Spine38Canvas extends karas.Component {
 
   componentDidMount() {
     let fake = this.ref.fake;
-    fake.clearAnimate();
 
-    this.animation = fake.animate([
-      {
-        backgroundColor: '#000',
-      },
-      {
-        backgroundColor: '#fff',
-      },
-    ], {
-      fps: this.props.fps || 60,
-      duration: 10000,
-      iterations: Infinity,
+    fake.frameAnimate(function(){
+      fake.refresh();
     });
 
     let isRender, self = this;
 
-    fake.render = (renderMode, lv, ctx) => {
+    fake.render = (renderMode, ctx, dx, dy) => {
       if (!this.bounds) {
         return
       }
@@ -127,7 +126,6 @@ export default class Spine38Canvas extends karas.Component {
         self.props.onRender?.();
       }
       let fitSize = this.props.fitSize;
-      let size = fake.getComputedStyle(['width', 'height']);
       // console.log(size)
       let x = this.bounds.offset.x;
       let y = this.bounds.offset.y;
@@ -142,11 +140,11 @@ export default class Spine38Canvas extends karas.Component {
       this.lastTime = this.currentTime;
       // matrix4转matrix2_3
       // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
-      ctx.translate(fake.sx, fake.sy);
+      ctx.translate(fake.x + dx, fake.y + dy);
       let scale = 1;
       if (fitSize) {
-        let scx = width / size.width;
-        let scy = height / size.height;
+        let scx = width / fake.width;
+        let scy = height / fake.height;
         scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
         if (scale !== 1) {
           ctx.scale(1 / scale, 1 / scale);
@@ -155,7 +153,7 @@ export default class Spine38Canvas extends karas.Component {
         // console.log(scale, size)
       }
       ctx.translate(-centerX, -centerY);
-      ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
+      ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);
 
       if (!this.renderer) {
         this.initRender(ctx);
@@ -224,33 +222,12 @@ export default class Spine38Canvas extends karas.Component {
   }
 
   render() {
-    return karas.parse({
-      tagName: 'div',
-      props: {
-        style: {
-          ...(this.props.style || {})
-        },
-        ref: "mesh"
-      },
-      children: [
-        {
-          tagName: '$polygon',
-          props: {
-            ref: "fake",
-            style: {
-              width: '100%',
-              height: '100%',
-            }
-          }
-        }
-      ]
-    });
-    // return <div ref="mesh" style={this.props.style || {}}>
-    //   <$polyline ref="fake" style={{
-    //     width: '100%',
-    //     height: '100%',
-    //   }} />
-    // </div>;;
+    return <div ref="mesh" style={this.props.style || {}}>
+      <$ ref="fake" style={{
+        width: '100%',
+        height: '100%',
+      }}/>
+    </div>;
   }
 }
 

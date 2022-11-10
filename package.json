@@ -1,11 +1,15 @@
 {
   "name": "karas-spine",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Spine plugin for karas.",
   "maintainers": [
     {
       "name": "hypnosnova",
       "email": "601670314@qq.com"
+    },
+    {
+      "name": "army8735",
+      "email": "army8735@qq.com"
     }
   ],
   "scripts": {
@@ -17,14 +21,14 @@
     "url": "git://github.com/karasjs/karas-spine.git"
   },
   "peerDependencies": {
-    "karas": "^0.78.1"
+    "karas": "^0.82.5"
   },
   "devDependencies": {
     "@babel/core": "^7.15.8",
     "@babel/plugin-proposal-class-properties": "^7.14.5",
     "@babel/preset-env": "^7.15.8",
     "@rollup/plugin-json": "^4.1.0",
-    "babel-preset-karas": "^7.10.1",
+    "babel-preset-karas": "^7.10.3",
     "rollup": "^2.58.0",
     "rollup-plugin-babel": "^4.4.0",
     "rollup-plugin-sourcemaps": "^0.6.3",

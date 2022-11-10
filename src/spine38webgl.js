@@ -9,6 +9,24 @@ const { SkeletonRenderer, AssetManager, Shader, PolygonBatcher, Matrix4 } = Spin
 // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 const GlobalSpineRendererMap = new WeakMap();
 
+const {
+  mode: {
+    CANVAS,
+    WEBGL,
+  },
+} = karas;
+
+class $ extends karas.Geom {
+  calContent(currentStyle, computedStyle) {
+    let res = super.calContent(currentStyle, computedStyle);
+    if(res) {
+      return res;
+    }
+    return true;
+  }
+  render() {}
+}
+
 /**
  * props参数介绍：
  * atlas 必填，url。
@@ -92,7 +110,7 @@ export default class Spine38WebGL extends karas.Component {
     this.renderer = GlobalSpineRendererMap.get(this.ctx);
     if (!this.renderer) {
       this.renderer = new SkeletonRenderer(ctx);
-      this.shader = Shader.newTwoColoredTextured(ctx)
+      this.shader = Shader.newTwoColoredTextured(ctx);
       this.mvp.ortho2d(0, 0, ctx.canvas.width - 1, ctx.canvas.height - 1);
 
       this.batcher = new PolygonBatcher(ctx);
@@ -117,75 +135,95 @@ export default class Spine38WebGL extends karas.Component {
 
   componentDidMount() {
     let fake = this.ref.fake;
-    fake.clearAnimate();
 
-    this.animation = fake.animate([
-      {
-        backgroundColor: '#000',
-      },
-      {
-        backgroundColor: '#fff',
-      },
-    ], {
-      fps: this.props.fps || 60,
-      duration: 10000,
-      iterations: Infinity,
+    fake.frameAnimate(function(){
+      fake.refresh();
     });
-
-    let texCache = this.root.texCache;
-    let unit = texCache.lockOneChannel();
 
     let isRender, self = this;
 
-    fake.render = (renderMode, lv, ctx) => {
-      if (!this.renderer) {
-        this.initRender(ctx, unit);
+    fake.render = (renderMode, ctx, dx, dy) => {
+      if(renderMode === WEBGL) {
+        if(!this.renderer) {
+          this.initRender(ctx, 0);
+        }
+        if(!this.bounds) {
+          return
+        }
+        if(!isRender) {
+          isRender = true;
+          self.props.onRender?.();
+        }
+        this.resize(ctx.canvas, ctx);
+
+        this.currentTime = Date.now() / 1000;
+
+        let delta = this.currentTime - this.lastTime;
+
+        this.lastTime = this.currentTime;
+        let bounds = this.bounds;
+        let size = bounds.size, offset = bounds.offset;
+        let x = offset.x;
+        let y = offset.y;
+        let width = size.x;
+        let height = size.y;
+        let centerX = x + width * 0.5;
+        let centerY = y + height * 0.5;
+
+        let scale = 1;
+        let fitSize = this.props.fitSize;
+        if (fitSize) {
+          let scx = width / fake.width;
+          let scy = height / fake.height;
+          scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+          if (scale !== 1) {
+            let tfo = [centerX * 2 / ctx.canvas.width, centerY * 2 / ctx.canvas.height];
+            this.mvp.translate(tfo[0], tfo[1], 0);
+            let m = karas.math.matrix.identity();
+            m[0] = 1 / scale;
+            m[5] = 1 / scale;
+            this.mvp.multiply({values:m});
+            this.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
+            this.mvp.translate(-1 + (fake.width * 0.5 + fake.x + dx) * 2 / ctx.canvas.width, 1 - (fake.height * 0.5 +fake.y + dy) * 2 / ctx.canvas.height, 0);
+          }
+        }
+        else {
+          this.mvp.translate(-1 + (fake.width * 0.5 + fake.x + dx) * 2 / ctx.canvas.width, 1 - (fake.height * 0.5 + fake.y * 2 + dy) / ctx.canvas.height, 0);
+        }
+
+        // let pm = fake.matrixEvent;
+        // if(!karas.math.matrix.isE(pm)) {
+        //   pm = pm.slice(0);
+        //   pm[12] /= ctx.canvas.width;
+        //   pm[13] /= ctx.canvas.height;
+        // }
+
+        this.state.update(delta);
+        this.state.apply(this.skeleton);
+        this.skeleton.updateWorldTransform();
+
+        // Bind the shader and set the texture and model-view-projection matrix.
+        this.shader.bind();
+        this.shader.setUniformi(Shader.SAMPLER, 0);
+        this.shader.setUniform4x4f(Shader.MVP_MATRIX, this.mvp.values);
+
+        // Start the batch and tell the SkeletonRenderer to render the active skeleton.
+        if(!this.batcher.isDrawing) {
+          this.batcher.begin(this.shader);
+        }
+
+        this.renderer.premultipliedAlpha = false;
+        this.renderer.draw(this.batcher, this.skeleton);
+        // this.batcher.end();
+
+        this.shader.unbind();
+
+        // console.warn(ctx.program);
+        ctx.useProgram(ctx.program);
+        // debugger
+
+        this.props.onFrame?.();
       }
-      if (!this.bounds) {
-        return
-      }
-      if(!isRender) {
-        isRender = true;
-        self.props.onRender?.();
-      }
-      this.resize(ctx.canvas, ctx);
-      let size = fake.getComputedStyle(['width', 'height']);
-
-      this.currentTime = Date.now() / 1000;
-
-      let delta = this.currentTime - this.lastTime;
-
-      this.lastTime = this.currentTime;
-      this.mvp.translate(-1 + (size.width + fake.x * 2) / ctx.canvas.width, 1 - (size.height + fake.y * 2) / ctx.canvas.height, 0);
-      this.mvp.values[0] *= this.props.style?.scaleX ?? 1;
-      this.mvp.values[5] *= this.props.style?.scaleY ?? 1;
-
-      // TODO Scale
-      this.state.update(delta);
-      this.state.apply(this.skeleton);
-      this.skeleton.updateWorldTransform();
-
-      // Bind the shader and set the texture and model-view-projection matrix.
-      this.shader.bind();
-      this.shader.setUniformi(Shader.SAMPLER, 0);
-      this.shader.setUniform4x4f(Shader.MVP_MATRIX, this.mvp.values);
-
-      // Start the batch and tell the SkeletonRenderer to render the active skeleton.
-      if (!this.batcher.isDrawing) {
-        this.batcher.begin(this.shader);
-      }
-
-      this.renderer.premultipliedAlpha = false;
-      this.renderer.draw(this.batcher, this.skeleton);
-      // this.batcher.end();
-
-      this.shader.unbind();
-
-      // console.warn(ctx.program);
-      ctx.useProgram(ctx.program);
-      // debugger
-
-      this.props.onFrame?.();
     };
   }
 
@@ -231,27 +269,12 @@ export default class Spine38WebGL extends karas.Component {
   }
 
   render() {
-    return karas.parse({
-      tagName: 'div',
-      props: {
-        style: {
-          ...(this.props.style || {})
-        },
-        ref: "mesh"
-      },
-      children: [
-        {
-          tagName: '$polygon',
-          props: {
-            ref: "fake",
-            style: {
-              width: '100%',
-              height: '100%',
-            }
-          }
-        }
-      ]
-    });
+    return <div ref="mesh" style={this.props.style || {}}>
+      <$ ref="fake" style={{
+        width: '100%',
+        height: '100%',
+      }}/>
+    </div>;
   }
 }
 
