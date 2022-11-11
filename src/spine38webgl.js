@@ -24,7 +24,9 @@ class $ extends karas.Geom {
     }
     return true;
   }
-  render() {}
+
+  render() {
+  }
 }
 
 /**
@@ -50,18 +52,14 @@ export default class Spine38WebGL extends karas.Component {
   currentTime = Date.now();
   mvp = new Matrix4();
 
+  mapping = null;
+
   constructor(props) {
     super(props);
 
-    this.animationName = props.animation || 'idle';
+    this.animationName = props.animation;
     this.skinName = props.skin || 'default';
     this.loopCount = props.loopCount || Infinity;
-    // 一开始就先加载资源
-    // this.load();
-  }
-
-  shouldComponentUpdate() {
-    return false;
   }
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
@@ -78,37 +76,47 @@ export default class Spine38WebGL extends karas.Component {
   }
 
   load() {
-    this.assetManager.loadTextureAtlas(this.props.atlas, this.props.image, () => { }, (e) => {
-      this.props.onError?.(e);
-    });
-    this.assetManager.loadText(this.props.json, () => { }, (e) => {
-      this.props.onError?.(e);
-    });
-    if (typeof this.props.image === 'string') {
-      this.assetManager.loadTexture(this.props.image, () => { }, (e) => {
-        this.props.onError?.(e);
-      });
-    } else {
-      for (let item of this.props.image) {
-        this.assetManager.loadTexture(item, () => { }, (e) => {
-          this.props.onError?.(e);
-        });
+    let assetManager = this.assetManager;
+    let img = this.props.image;
+    if(typeof img === 'string') {
+      assetManager.loadTexture(img);
+    }
+    // 多个
+    else if(Array.isArray(img)) {
+      for(let i = 0, len = img.length; i < len; i++) {
+        assetManager.loadTexture(img[i]);
       }
     }
+    // 多个且需要映射关系
+    else {
+      this.mapping = {};
+      for(let i in img) {
+        if(img.hasOwnProperty(i)) {
+          let item = img[i];
+          this.mapping[i] = item;
+          assetManager.loadTexture(item);
+        }
+      }
+    }
+    assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+    assetManager.loadText(this.props.json);
 
-    let i = setInterval(() => {
-      if (this.assetManager.isLoadingComplete()) {
-        clearInterval(i);
+    let onLoad = () => {
+      if(assetManager.isLoadingComplete()) {
         this.props.onLoad?.();
         this.playAnimation();
       }
-    }, 1000);
+      else {
+        karas.inject.requestAnimationFrame(onLoad);
+      }
+    }
+    onLoad();
   }
 
   initRender(ctx, unit) {
     this.ctx = ctx;
     this.renderer = GlobalSpineRendererMap.get(this.ctx);
-    if (!this.renderer) {
+    if(!this.renderer) {
       this.renderer = new SkeletonRenderer(ctx);
       this.shader = Shader.newTwoColoredTextured(ctx);
       this.mvp.ortho2d(0, 0, ctx.canvas.width - 1, ctx.canvas.height - 1);
@@ -122,13 +130,13 @@ export default class Spine38WebGL extends karas.Component {
   }
 
   resize(canvas, ctx) {
-    var bounds = this.bounds;
+    let bounds = this.bounds;
 
     // magic
-    var centerX = bounds.offset.x + bounds.size.x / 2;
-    var centerY = bounds.offset.y + bounds.size.y / 2;
-    var width = canvas.width;
-    var height = canvas.height;
+    let centerX = bounds.offset.x + bounds.size.x / 2;
+    let centerY = bounds.offset.y + bounds.size.y / 2;
+    let width = canvas.width;
+    let height = canvas.height;
 
     this.mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
   }
@@ -136,7 +144,7 @@ export default class Spine38WebGL extends karas.Component {
   componentDidMount() {
     let fake = this.ref.fake;
 
-    fake.frameAnimate(function(){
+    fake.frameAnimate(function() {
       fake.refresh();
     });
 
@@ -172,19 +180,19 @@ export default class Spine38WebGL extends karas.Component {
 
         let scale = 1;
         let fitSize = this.props.fitSize;
-        if (fitSize) {
+        if(fitSize) {
           let scx = width / fake.width;
           let scy = height / fake.height;
           scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-          if (scale !== 1) {
+          if(scale !== 1) {
             let tfo = [centerX * 2 / ctx.canvas.width, centerY * 2 / ctx.canvas.height];
             this.mvp.translate(tfo[0], tfo[1], 0);
             let m = karas.math.matrix.identity();
             m[0] = 1 / scale;
             m[5] = 1 / scale;
-            this.mvp.multiply({values:m});
+            this.mvp.multiply({ values: m });
             this.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
-            this.mvp.translate(-1 + (fake.width * 0.5 + fake.x + dx) * 2 / ctx.canvas.width, 1 - (fake.height * 0.5 +fake.y + dy) * 2 / ctx.canvas.height, 0);
+            this.mvp.translate(-1 + (fake.width * 0.5 + fake.x + dx) * 2 / ctx.canvas.width, 1 - (fake.height * 0.5 + fake.y + dy) * 2 / ctx.canvas.height, 0);
           }
         }
         else {
@@ -228,26 +236,31 @@ export default class Spine38WebGL extends karas.Component {
   }
 
   loadSkeleton(initialAnimation, skin) {
-    if (skin === undefined) skin = "default";
+    if(skin === undefined || skin === null) {
+      skin = 'default';
+    }
 
     // Load the texture atlas using name.atlas from the AssetManager.
-    var atlas = this.assetManager.get(this.props.atlas);
+    let atlas = this.assetManager.get(this.props.atlas);
 
     // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
-    var atlasLoader = new AtlasAttachmentLoader(atlas);
+    let atlasLoader = new AtlasAttachmentLoader(atlas);
 
     // Create a SkeletonBinary instance for parsing the .skel file.
-    var skeletonBinary = new SkeletonJson(atlasLoader);
+    let skeletonBinary = new SkeletonJson(atlasLoader);
 
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
-    var skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
+    let skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
     this.skeleton = new Skeleton(skeletonData);
     this.skeleton.setSkinByName(skin);
-    var bounds = calculateBounds(this.skeleton);
+    let bounds = calculateBounds(this.skeleton);
+    if(!initialAnimation) {
+      initialAnimation = skeletonData.animations[0].name;
+    }
 
     // Create an AnimationState, and set the initial animation in looping mode.
-    var animationStateData = new AnimationStateData(this.skeleton.data);
-    var animationState = new AnimationState(animationStateData);
+    let animationStateData = new AnimationStateData(this.skeleton.data);
+    let animationState = new AnimationState(animationStateData);
     animationState.setAnimation(0, initialAnimation, true);
     this.props.onStart?.(initialAnimation, this.loopCount);
     animationState.addListener({
@@ -255,9 +268,10 @@ export default class Spine38WebGL extends karas.Component {
         this.loopCount--;
         this.props.onLoop?.(initialAnimation, this.loopCount);
 
-        if (this.loopCount > 0) {
+        if(this.loopCount > 0) {
           animationState.setAnimation(0, initialAnimation, 0);
-        } else {
+        }
+        else {
           this.props.onEnd?.(initialAnimation);
           animationState.setAnimation(0, this.props.animation, 0);
         }
@@ -281,8 +295,8 @@ export default class Spine38WebGL extends karas.Component {
 function calculateBounds(skeleton) {
   skeleton.setToSetupPose();
   skeleton.updateWorldTransform();
-  var offset = new Vector2();
-  var size = new Vector2();
+  let offset = new Vector2();
+  let size = new Vector2();
   skeleton.getBounds(offset, size, []);
   return { offset: offset, size: size };
 }

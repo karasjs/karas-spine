@@ -2297,11 +2297,12 @@ var spinewebgl;
 				path = this.rawDataUris[path];
 			img.src = path;
 		};
-		AssetManager.prototype.loadTextureAtlas = function (path, success, error) {
+		AssetManager.prototype.loadTextureAtlas = function (path, img, mapping, success, error) {
 			var _this = this;
 			if (success === void 0) { success = null; }
 			if (error === void 0) { error = null; }
 			var parent = path.lastIndexOf("/") >= 0 ? path.substring(0, path.lastIndexOf("/")) : "";
+			var assets = _this.assets;
 			path = this.pathPrefix + path;
 			this.toLoad++;
 			this.downloadText(path, function (atlasData) {
@@ -2309,7 +2310,16 @@ var spinewebgl;
 				var atlasPages = new Array();
 				try {
 					var atlas = new spine.TextureAtlas(atlasData, function (path) {
-						atlasPages.push(parent == "" ? path : parent + "/" + path);
+						var url = parent == "" ? path : parent + "/" + path;
+						if(!assets.hasOwnProperty(url)) {
+							if(!mapping) {
+								url = img;
+							}
+							else {
+								url = mapping[url];
+							}
+						}
+						atlasPages.push(url);
 						var image = document.createElement("img");
 						image.width = 16;
 						image.height = 16;
@@ -2333,7 +2343,17 @@ var spinewebgl;
 							if (!pageLoadError) {
 								try {
 									var atlas = new spine.TextureAtlas(atlasData, function (path) {
-										return _this.get(parent == "" ? path : parent + "/" + path);
+										let url = parent == "" ? path : parent + "/" + path;
+										let res = _this.get(url);
+										if(!res) {
+											if(!mapping) {
+												res = _this.get(img);
+											}
+											else {
+												res = _this.get(mapping[url]);
+											}
+										}
+										return res;
 									});
 									_this.assets[path] = atlas;
 									if (success)

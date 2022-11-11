@@ -105,80 +105,6 @@ function _get() {
   return _get.apply(this, arguments);
 }
 
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(o);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-
-  return arr2;
-}
-
-function _createForOfIteratorHelper(o, allowArrayLike) {
-  var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
-
-  if (!it) {
-    if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
-      if (it) o = it;
-      var i = 0;
-
-      var F = function () {};
-
-      return {
-        s: F,
-        n: function () {
-          if (i >= o.length) return {
-            done: true
-          };
-          return {
-            done: false,
-            value: o[i++]
-          };
-        },
-        e: function (e) {
-          throw e;
-        },
-        f: F
-      };
-    }
-
-    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-  }
-
-  var normalCompletion = true,
-      didErr = false,
-      err;
-  return {
-    s: function () {
-      it = it.call(o);
-    },
-    n: function () {
-      var step = it.next();
-      normalCompletion = step.done;
-      return step;
-    },
-    e: function (e) {
-      didErr = true;
-      err = e;
-    },
-    f: function () {
-      try {
-        if (!normalCompletion && it.return != null) it.return();
-      } finally {
-        if (didErr) throw err;
-      }
-    }
-  };
-}
-
 /* eslint-disable */
 var __extends$1 = undefined && undefined.__extends || function () {
   var _extendStatics = function extendStatics(d, b) {
@@ -2827,7 +2753,7 @@ var spinewebgl;
       img.src = path;
     };
 
-    AssetManager.prototype.loadTextureAtlas = function (path, success, error) {
+    AssetManager.prototype.loadTextureAtlas = function (path, img, mapping, success, error) {
       var _this = this;
 
       if (success === void 0) {
@@ -2839,6 +2765,7 @@ var spinewebgl;
       }
 
       var parent = path.lastIndexOf("/") >= 0 ? path.substring(0, path.lastIndexOf("/")) : "";
+      var assets = _this.assets;
       path = this.pathPrefix + path;
       this.toLoad++;
       this.downloadText(path, function (atlasData) {
@@ -2849,7 +2776,17 @@ var spinewebgl;
 
         try {
           var atlas = new spine.TextureAtlas(atlasData, function (path) {
-            atlasPages.push(parent == "" ? path : parent + "/" + path);
+            var url = parent == "" ? path : parent + "/" + path;
+
+            if (!assets.hasOwnProperty(url)) {
+              if (!mapping) {
+                url = img;
+              } else {
+                url = mapping[url];
+              }
+            }
+
+            atlasPages.push(url);
             var image = document.createElement("img");
             image.width = 16;
             image.height = 16;
@@ -2874,7 +2811,19 @@ var spinewebgl;
               if (!pageLoadError) {
                 try {
                   var atlas = new spine.TextureAtlas(atlasData, function (path) {
-                    return _this.get(parent == "" ? path : parent + "/" + path);
+                    var url = parent == "" ? path : parent + "/" + path;
+
+                    var res = _this.get(url);
+
+                    if (!res) {
+                      if (!mapping) {
+                        res = _this.get(img);
+                      } else {
+                        res = _this.get(mapping[url]);
+                      }
+                    }
+
+                    return res;
                   });
                   _this.assets[path] = atlas;
                   if (success) success(path, atlas);
@@ -13015,6 +12964,8 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
 
     _defineProperty(_assertThisInitialized(_this), "mvp", new Matrix4());
 
+    _defineProperty(_assertThisInitialized(_this), "mapping", null);
+
     _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
       var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
       var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
@@ -13033,71 +12984,56 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       _this.animationsList = data.animations;
     });
 
-    _this.animationName = props.animation || 'idle';
+    _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
-    _this.loopCount = props.loopCount || Infinity; // 一开始就先加载资源
-    // this.load();
-
+    _this.loopCount = props.loopCount || Infinity;
     return _this;
   }
 
   _createClass(Spine38WebGL, [{
-    key: "shouldComponentUpdate",
-    value: function shouldComponentUpdate() {
-      return false;
-    }
-  }, {
     key: "load",
     value: function load() {
       var _this2 = this;
 
-      this.assetManager.loadTextureAtlas(this.props.atlas, this.props.image, function () {}, function (e) {
-        var _this2$props$onError, _this2$props;
+      var assetManager = this.assetManager;
+      var img = this.props.image;
 
-        (_this2$props$onError = (_this2$props = _this2.props).onError) === null || _this2$props$onError === void 0 ? void 0 : _this2$props$onError.call(_this2$props, e);
-      });
-      this.assetManager.loadText(this.props.json, function () {}, function (e) {
-        var _this2$props$onError2, _this2$props2;
+      if (typeof img === 'string') {
+        assetManager.loadTexture(img);
+      } // 多个
+      else if (Array.isArray(img)) {
+        for (var i = 0, len = img.length; i < len; i++) {
+          assetManager.loadTexture(img[i]);
+        }
+      } // 多个且需要映射关系
+      else {
+        this.mapping = {};
 
-        (_this2$props$onError2 = (_this2$props2 = _this2.props).onError) === null || _this2$props$onError2 === void 0 ? void 0 : _this2$props$onError2.call(_this2$props2, e);
-      });
-
-      if (typeof this.props.image === 'string') {
-        this.assetManager.loadTexture(this.props.image, function () {}, function (e) {
-          var _this2$props$onError3, _this2$props3;
-
-          (_this2$props$onError3 = (_this2$props3 = _this2.props).onError) === null || _this2$props$onError3 === void 0 ? void 0 : _this2$props$onError3.call(_this2$props3, e);
-        });
-      } else {
-        var _iterator = _createForOfIteratorHelper(this.props.image),
-            _step;
-
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var item = _step.value;
-            this.assetManager.loadTexture(item, function () {}, function (e) {
-              var _this2$props$onError4, _this2$props4;
-
-              (_this2$props$onError4 = (_this2$props4 = _this2.props).onError) === null || _this2$props$onError4 === void 0 ? void 0 : _this2$props$onError4.call(_this2$props4, e);
-            });
+        for (var _i in img) {
+          if (img.hasOwnProperty(_i)) {
+            var item = img[_i];
+            this.mapping[_i] = item;
+            assetManager.loadTexture(item);
           }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
         }
       }
 
-      var i = setInterval(function () {
-        if (_this2.assetManager.isLoadingComplete()) {
-          var _this2$props$onLoad, _this2$props5;
+      assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+      assetManager.loadText(this.props.json);
 
-          clearInterval(i);
-          (_this2$props$onLoad = (_this2$props5 = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props5);
+      var onLoad = function onLoad() {
+        if (assetManager.isLoadingComplete()) {
+          var _this2$props$onLoad, _this2$props;
+
+          (_this2$props$onLoad = (_this2$props = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props);
 
           _this2.playAnimation();
+        } else {
+          karas.inject.requestAnimationFrame(onLoad);
         }
-      }, 1000);
+      };
+
+      onLoad();
     }
   }, {
     key: "initRender",
@@ -13245,7 +13181,10 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
           _this$props,
           _this4 = this;
 
-      if (skin === undefined) skin = "default"; // Load the texture atlas using name.atlas from the AssetManager.
+      if (skin === undefined || skin === null) {
+        skin = 'default';
+      } // Load the texture atlas using name.atlas from the AssetManager.
+
 
       var atlas = this.assetManager.get(this.props.atlas); // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
 
@@ -13256,7 +13195,12 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
       this.skeleton = new Skeleton$1(skeletonData);
       this.skeleton.setSkinByName(skin);
-      var bounds = calculateBounds$1(this.skeleton); // Create an AnimationState, and set the initial animation in looping mode.
+      var bounds = calculateBounds$1(this.skeleton);
+
+      if (!initialAnimation) {
+        initialAnimation = skeletonData.animations[0].name;
+      } // Create an AnimationState, and set the initial animation in looping mode.
+
 
       var animationStateData = new AnimationStateData$1(this.skeleton.data);
       var animationState = new AnimationState$1(animationStateData);
@@ -23325,6 +23269,8 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
 
     _defineProperty(_assertThisInitialized(_this), "currentTime", Date.now());
 
+    _defineProperty(_assertThisInitialized(_this), "mapping", null);
+
     _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
       var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
       var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
@@ -23343,7 +23289,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       _this.animationsList = data.animations;
     });
 
-    _this.animationName = props.animation || 'idle';
+    _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
     _this.loopCount = props.loopCount || Infinity; // 一开始就先加载资源
 
@@ -23353,47 +23299,48 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }
 
   _createClass(Spine38Canvas, [{
-    key: "shouldComponentUpdate",
-    value: function shouldComponentUpdate() {
-      return false;
-    }
-  }, {
     key: "load",
     value: function load() {
       var _this2 = this;
 
-      this.assetManager = new AssetManager();
-      this.assetManager.loadText(this.props.atlas);
-      this.assetManager.loadText(this.props.json);
+      var assetManager = this.assetManager = new AssetManager();
+      assetManager.loadText(this.props.atlas);
+      assetManager.loadText(this.props.json);
+      var img = this.props.image;
 
-      if (typeof this.props.image === 'string') {
-        this.assetManager.loadTexture(this.props.image);
-      } else {
-        var _iterator = _createForOfIteratorHelper(this.props.image),
-            _step;
+      if (typeof img === 'string') {
+        assetManager.loadTexture(img);
+      } // 多个
+      else if (Array.isArray(img)) {
+        for (var i = 0, len = img.length; i < len; i++) {
+          assetManager.loadTexture(img[i]);
+        }
+      } // 多个且需要映射关系
+      else {
+        this.mapping = {};
 
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var item = _step.value;
-            this.assetManager.loadTexture(item);
+        for (var _i in img) {
+          if (img.hasOwnProperty(_i)) {
+            var item = img[_i];
+            this.mapping[_i] = item;
+            assetManager.loadTexture(item);
           }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
         }
       }
 
-      var i = setInterval(function () {
-        if (_this2.assetManager.isLoadingComplete()) {
+      var onLoad = function onLoad() {
+        if (assetManager.isLoadingComplete()) {
           var _this2$props$onLoad, _this2$props;
 
-          clearInterval(i);
           (_this2$props$onLoad = (_this2$props = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props);
 
           _this2.playAnimation();
+        } else {
+          karas.inject.requestAnimationFrame(onLoad);
         }
-      }, 1000);
+      };
+
+      onLoad();
     }
   }, {
     key: "initRender",
@@ -23507,14 +23454,31 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
-      var _this$props$onStart,
-          _this$props,
-          _this4 = this;
+      var _this4 = this,
+          _this$props$onStart,
+          _this$props;
 
-      if (skin === undefined) skin = "default";
+      if (skin === undefined || skin === null) {
+        skin = 'default';
+      }
+
+      var mapping = this.mapping;
       var assetManager = this.assetManager;
       var atlas = new TextureAtlas(assetManager.get(this.props.atlas), function (path) {
-        return assetManager.get(path);
+        var res = assetManager.get(path); // 找不到资源，atlas中图片名不对应
+
+        if (!res) {
+          // 只有1个，可以无视，直接对上
+          if (!mapping) {
+            res = assetManager.get(_this4.props.image);
+          } // 多个的话，传入的是个对象，自带映射关系
+          else {
+            var url = mapping[path];
+            res = assetManager.get(url);
+          }
+        }
+
+        return res;
       });
       var atlasLoader = new AtlasAttachmentLoader(atlas);
       var skeletonJson = new SkeletonJson(atlasLoader);
@@ -23523,6 +23487,11 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       skeleton.scaleY = -1;
       var bounds = calculateBounds(skeleton);
       skeleton.setSkinByName(skin);
+
+      if (!initialAnimation) {
+        initialAnimation = skeletonData.animations[0].name;
+      }
+
       var animationState = new AnimationState(new AnimationStateData(skeleton.data));
       animationState.setAnimation(0, initialAnimation, 0);
       (_this$props$onStart = (_this$props = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props, initialAnimation, this.loopCount);
@@ -23580,7 +23549,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.3.0";
+var version = "0.3.1";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map
