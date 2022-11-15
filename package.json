@@ -1,15 +1,15 @@
 {
   "name": "karas-spine",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Spine plugin for karas.",
   "maintainers": [
     {
-      "name": "hypnosnova",
-      "email": "601670314@qq.com"
-    },
-    {
       "name": "army8735",
       "email": "army8735@qq.com"
+    },
+    {
+      "name": "hypnosnova",
+      "email": "601670314@qq.com"
     }
   ],
   "scripts": {
@@ -42,7 +42,7 @@
   },
   "license": "MIT",
   "readmeFilename": "README.md",
-  "author": "hypnosnova <601670314@qq.com>",
+  "author": "army8735 <army8735@qq.com>",
   "publishConfig": {
     "access": "public"
   }

@@ -12907,9 +12907,21 @@
       Matrix4 = _SpineWebGL$webgl.Matrix4; // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 
   var GlobalSpineRendererMap$1 = new WeakMap();
-  var _karas$mode = karas__default["default"].mode;
+  var _karas$math$matrix = karas__default["default"].math.matrix,
+      isE = _karas$math$matrix.isE,
+      multiply = _karas$math$matrix.multiply,
+      identity = _karas$math$matrix.identity,
+      calPoint = _karas$math$matrix.calPoint,
+      _karas$mode = karas__default["default"].mode;
       _karas$mode.CANVAS;
-      var WEBGL = _karas$mode.WEBGL;
+      var WEBGL = _karas$mode.WEBGL,
+      _karas$enums$STYLE_KE = karas__default["default"].enums.STYLE_KEY,
+      TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
+      TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
+      calMatrixByOrigin = karas__default["default"].style.transform.calMatrixByOrigin,
+      _karas$util = karas__default["default"].util,
+      equalArr = _karas$util.equalArr,
+      assignMatrix = _karas$util.assignMatrix;
 
   var $$1 = /*#__PURE__*/function (_karas$Geom) {
     _inherits($, _karas$Geom);
@@ -12919,23 +12931,27 @@
     }
 
     _createClass($, [{
-      key: "calContent",
-      value: function calContent(currentStyle, computedStyle) {
-        var res = _get(_getPrototypeOf($.prototype), "calContent", this).call(this, currentStyle, computedStyle);
-
-        if (res) {
-          return res;
-        }
-
-        return true;
-      }
-    }, {
       key: "render",
       value: function render() {}
     }]);
 
     return $;
   }(karas__default["default"].Geom);
+
+  function calWebglMatrix(node, cx, cy) {
+    var x = node.__x1,
+        y = node.__y1;
+    var currentStyle = node.currentStyle,
+        computedStyle = node.computedStyle;
+    var matrix = computedStyle[TRANSFORM];
+
+    if (matrix && !isE(matrix)) {
+      var tfo = currentStyle[TRANSFORM_ORIGIN];
+      matrix = calMatrixByOrigin(matrix, (cx - x - tfo[0]) / cx, (cy - y - tfo[1]) / cy);
+    }
+
+    return matrix;
+  }
   /**
    * props参数介绍：
    * atlas 必填，url。
@@ -13052,7 +13068,7 @@
         if (!this.renderer) {
           this.renderer = new SkeletonRenderer$1(ctx);
           this.shader = Shader.newTwoColoredTextured(ctx);
-          this.mvp.ortho2d(0, 0, ctx.canvas.width - 1, ctx.canvas.height - 1);
+          this.mvp.ortho2d(0, 0, ctx.canvas.width, ctx.canvas.height);
           this.batcher = new PolygonBatcher(ctx);
           this.assetManager = new AssetManager$1(ctx, undefined, false, unit);
           this.load();
@@ -13080,7 +13096,9 @@
           fake.refresh();
         });
         var isRender,
-            self = this;
+            self = this,
+            lastPm,
+            lastMatrix;
 
         fake.render = function (renderMode, ctx, dx, dy) {
           if (renderMode === WEBGL) {
@@ -13101,7 +13119,13 @@
               (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
             }
 
-            _this3.resize(ctx.canvas, ctx);
+            var canvas = ctx.canvas;
+            var W = canvas.width,
+                H = canvas.height,
+                CX = W * 0.5,
+                CY = H * 0.5;
+
+            _this3.resize(canvas, ctx);
 
             _this3.currentTime = Date.now() / 1000;
             var delta = _this3.currentTime - _this3.lastTime;
@@ -13115,40 +13139,90 @@
             var height = size.y;
             var centerX = x + width * 0.5;
             var centerY = y + height * 0.5;
-            var scale = 1;
-            var fitSize = _this3.props.fitSize;
+            var tfo = [centerX / CX, centerY / CY];
+            var pm = fake.matrixEvent;
 
-            if (fitSize) {
-              var scx = width / fake.width;
-              var scy = height / fake.height;
-              scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+            if (lastPm && equalArr(pm, lastPm)) {
+              assignMatrix(_this3.mvp.values, lastMatrix);
+            } else {
+              // 先以骨骼原本的中心点为基准，应用节点的matrix
+              if (!isE(pm)) {
+                var m = identity(),
+                    node = fake;
 
-              if (scale !== 1) {
-                var tfo = [centerX * 2 / ctx.canvas.width, centerY * 2 / ctx.canvas.height];
+                while (node) {
+                  var t = calWebglMatrix(node, CX, CY);
+
+                  if (t) {
+                    m = multiply(t, m);
+                  }
+
+                  node = node.domParent;
+                } // root左上原点对齐中心，上下翻转y
+
 
                 _this3.mvp.translate(tfo[0], tfo[1], 0);
 
-                var m = karas__default["default"].math.matrix.identity();
-                m[0] = 1 / scale;
-                m[5] = 1 / scale;
+                m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
 
-                _this3.mvp.multiply({
+                _this3.mvp.multiplyLeft({
                   values: m
                 });
 
-                _this3.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
+                _this3.mvp.multiply({
+                  values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+                });
 
-                _this3.mvp.translate(-1 + (fake.width * 0.5 + fake.x + dx) * 2 / ctx.canvas.width, 1 - (fake.height * 0.5 + fake.y + dy) * 2 / ctx.canvas.height, 0);
+                _this3.mvp.translate(-tfo[0], -tfo[1], 0);
               }
-            } else {
-              _this3.mvp.translate(-1 + (fake.width * 0.5 + fake.x + dx) * 2 / ctx.canvas.width, 1 - (fake.height * 0.5 + fake.y * 2 + dy) / ctx.canvas.height, 0);
-            } // let pm = fake.matrixEvent;
-            // if(!karas.math.matrix.isE(pm)) {
-            //   pm = pm.slice(0);
-            //   pm[12] /= ctx.canvas.width;
-            //   pm[13] /= ctx.canvas.height;
-            // }
 
+              var fitSize = _this3.props.fitSize;
+              {
+                var scx = width / fake.width;
+                var scy = height / fake.height;
+                var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+
+                if (scale !== 1) {
+                  // 对齐中心点后缩放
+                  var _tfo = [centerX / CX, centerY / CY];
+
+                  _this3.mvp.translate(_tfo[0], _tfo[1], 0);
+
+                  var _m = karas__default["default"].math.matrix.identity();
+
+                  _m[0] = 1 / scale;
+                  _m[5] = 1 / scale;
+
+                  _this3.mvp.multiply({
+                    values: _m
+                  });
+
+                  _this3.mvp.translate(-_tfo[0] / scale, -_tfo[1] / scale, 0);
+                }
+              }
+
+              _this3.mvp.translate(tfo[0], tfo[1], 0); // 还原位置，先对齐中心点，再校正
+
+
+              var x0 = fake.x + fake.width * 0.5;
+              var y0 = fake.y + fake.height * 0.5;
+              var p1 = calPoint({
+                x: centerX,
+                y: centerY
+              }, _this3.mvp.values);
+              var p = calPoint({
+                x: x0,
+                y: y0
+              }, pm);
+
+              _this3.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
+
+              _this3.mvp.translate(-p1.x, -p1.y, 0);
+
+              lastMatrix = _this3.mvp.values.slice(0);
+            }
+
+            lastPm = pm.slice(0);
 
             _this3.state.update(delta);
 
@@ -13168,13 +13242,12 @@
               _this3.batcher.begin(_this3.shader);
             }
 
-            _this3.renderer.premultipliedAlpha = false;
+            _this3.renderer.premultipliedAlpha = !!_this3.props.premultipliedAlpha;
 
             _this3.renderer.draw(_this3.batcher, _this3.skeleton); // this.batcher.end();
 
 
-            _this3.shader.unbind(); // console.warn(ctx.program);
-
+            _this3.shader.unbind();
 
             ctx.useProgram(ctx.program); // debugger
 
@@ -23388,20 +23461,16 @@
             (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
           }
 
-          var fitSize = _this3.props.fitSize; // console.log(size)
-
+          var fitSize = _this3.props.fitSize;
           var x = _this3.bounds.offset.x;
           var y = _this3.bounds.offset.y;
           var width = _this3.bounds.size.x;
           var height = _this3.bounds.size.y;
           var centerX = x + width * 0.5;
-          var centerY = y + height * 0.5; // let matrix = mesh.matrixEvent;
-
+          var centerY = y + height * 0.5;
           _this3.currentTime = Date.now() / 1000;
           var delta = _this3.currentTime - _this3.lastTime;
-          _this3.lastTime = _this3.currentTime; // matrix4转matrix2_3
-          // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
-
+          _this3.lastTime = _this3.currentTime;
           ctx.translate(fake.x + dx, fake.y + dy);
           var scale = 1;
 
@@ -23412,8 +23481,7 @@
 
             if (scale !== 1) {
               ctx.scale(1 / scale, 1 / scale);
-            } // console.log(scale, size)
-
+            }
           }
 
           ctx.translate(-centerX, -centerY);
@@ -23557,7 +23625,7 @@
     };
   }
 
-  var version = "0.3.1";
+  var version = "0.3.2";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

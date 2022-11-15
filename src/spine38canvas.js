@@ -134,7 +134,7 @@ export default class Spine38Canvas extends karas.Component {
   componentDidMount() {
     let fake = this.ref.fake;
 
-    fake.frameAnimate(function() {
+    fake.frameAnimate(() => {
       fake.refresh();
     });
 
@@ -149,20 +149,16 @@ export default class Spine38Canvas extends karas.Component {
         self.props.onRender?.();
       }
       let fitSize = this.props.fitSize;
-      // console.log(size)
       let x = this.bounds.offset.x;
       let y = this.bounds.offset.y;
       let width = this.bounds.size.x;
       let height = this.bounds.size.y;
       let centerX = x + width * 0.5;
       let centerY = y + height * 0.5;
-      // let matrix = mesh.matrixEvent;
       this.currentTime = Date.now() / 1000;
 
       let delta = this.currentTime - this.lastTime;
       this.lastTime = this.currentTime;
-      // matrix4转matrix2_3
-      // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
       ctx.translate(fake.x + dx, fake.y + dy);
       let scale = 1;
       if(fitSize) {
@@ -172,8 +168,6 @@ export default class Spine38Canvas extends karas.Component {
         if(scale !== 1) {
           ctx.scale(1 / scale, 1 / scale);
         }
-
-        // console.log(scale, size)
       }
       ctx.translate(-centerX, -centerY);
       ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);

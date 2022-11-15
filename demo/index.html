@@ -12,30 +12,29 @@
 <pre><code class="brush:csx"></code></pre>
 <script type="text/jsx">
   let root = karas.render(
-    <canvas width="800" height="800">
-      <Spine.Spine38Canvas ref="spine"
+    <webgl width="800" height="800">
+      <Spine.Spine38Webgl ref="spine"
         style={{
-          margin: '200 0 0 200',
-          width: 200,
-          height: 200,
+          margin: '50 0 0 50',
+          width: 300,
+          height: 300,
           background: '#FFF',
           rotate: 30,
-          scale: 2,
+          scale: 1.5,
+          translateX: 50,
         }}
-        triangle={true}
         fitSize={true}
         debug={false}
+        premultipliedAlpha={true}
         atlas="spineboy-pro.atlas"
         image="spineboy-pro.png"
         json="spineboy-pro.json"/>
-    </canvas>,
+    </webgl>,
     '#test'
   );
 
   let spine = root.ref.spine;
-  console.log(spine);
   // spine.playAnimation('run');
-  // spine.playAnimation('death', 1);
 </script>
 <script src="./homunculus.js"></script>
 <script src="./yurine.js"></script>
