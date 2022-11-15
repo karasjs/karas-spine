@@ -191,7 +191,7 @@ export default class Spine40 extends karas.Component {
         width: '100%',
         height: '100%',
       }} />
-    </div>;;
+    </div>;
   }
 }
 

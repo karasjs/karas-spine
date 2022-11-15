@@ -1,37 +1,5 @@
 import karas from 'karas';
 
-function ownKeys(object, enumerableOnly) {
-  var keys = Object.keys(object);
-
-  if (Object.getOwnPropertySymbols) {
-    var symbols = Object.getOwnPropertySymbols(object);
-    enumerableOnly && (symbols = symbols.filter(function (sym) {
-      return Object.getOwnPropertyDescriptor(object, sym).enumerable;
-    })), keys.push.apply(keys, symbols);
-  }
-
-  return keys;
-}
-
-function _objectSpread2(target) {
-  for (var i = 1; i < arguments.length; i++) {
-    var source = null != arguments[i] ? arguments[i] : {};
-    i % 2 ? ownKeys(Object(source), !0).forEach(function (key) {
-      _defineProperty(target, key, source[key]);
-    }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)) : ownKeys(Object(source)).forEach(function (key) {
-      Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key));
-    });
-  }
-
-  return target;
-}
-
-function _classCallCheck(instance, Constructor) {
-  if (!(instance instanceof Constructor)) {
-    throw new TypeError("Cannot call a class as a function");
-  }
-}
-
 function _defineProperties(target, props) {
   for (var i = 0; i < props.length; i++) {
     var descriptor = props[i];
@@ -99,19 +67,6 @@ function _setPrototypeOf(o, p) {
   return _setPrototypeOf(o, p);
 }
 
-function _isNativeReflectConstruct() {
-  if (typeof Reflect === "undefined" || !Reflect.construct) return false;
-  if (Reflect.construct.sham) return false;
-  if (typeof Proxy === "function") return true;
-
-  try {
-    Boolean.prototype.valueOf.call(Reflect.construct(Boolean, [], function () {}));
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
 function _assertThisInitialized(self) {
   if (self === void 0) {
     throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -120,107 +75,34 @@ function _assertThisInitialized(self) {
   return self;
 }
 
-function _possibleConstructorReturn(self, call) {
-  if (call && (typeof call === "object" || typeof call === "function")) {
-    return call;
-  } else if (call !== void 0) {
-    throw new TypeError("Derived constructors may only return object or undefined");
+function _superPropBase(object, property) {
+  while (!Object.prototype.hasOwnProperty.call(object, property)) {
+    object = _getPrototypeOf(object);
+    if (object === null) break;
   }
 
-  return _assertThisInitialized(self);
+  return object;
 }
 
-function _createSuper(Derived) {
-  var hasNativeReflectConstruct = _isNativeReflectConstruct();
+function _get() {
+  if (typeof Reflect !== "undefined" && Reflect.get) {
+    _get = Reflect.get.bind();
+  } else {
+    _get = function _get(target, property, receiver) {
+      var base = _superPropBase(target, property);
 
-  return function _createSuperInternal() {
-    var Super = _getPrototypeOf(Derived),
-        result;
+      if (!base) return;
+      var desc = Object.getOwnPropertyDescriptor(base, property);
 
-    if (hasNativeReflectConstruct) {
-      var NewTarget = _getPrototypeOf(this).constructor;
-
-      result = Reflect.construct(Super, arguments, NewTarget);
-    } else {
-      result = Super.apply(this, arguments);
-    }
-
-    return _possibleConstructorReturn(this, result);
-  };
-}
-
-function _unsupportedIterableToArray(o, minLen) {
-  if (!o) return;
-  if (typeof o === "string") return _arrayLikeToArray(o, minLen);
-  var n = Object.prototype.toString.call(o).slice(8, -1);
-  if (n === "Object" && o.constructor) n = o.constructor.name;
-  if (n === "Map" || n === "Set") return Array.from(o);
-  if (n === "Arguments" || /^(?:Ui|I)nt(?:8|16|32)(?:Clamped)?Array$/.test(n)) return _arrayLikeToArray(o, minLen);
-}
-
-function _arrayLikeToArray(arr, len) {
-  if (len == null || len > arr.length) len = arr.length;
-
-  for (var i = 0, arr2 = new Array(len); i < len; i++) arr2[i] = arr[i];
-
-  return arr2;
-}
-
-function _createForOfIteratorHelper(o, allowArrayLike) {
-  var it = typeof Symbol !== "undefined" && o[Symbol.iterator] || o["@@iterator"];
-
-  if (!it) {
-    if (Array.isArray(o) || (it = _unsupportedIterableToArray(o)) || allowArrayLike && o && typeof o.length === "number") {
-      if (it) o = it;
-      var i = 0;
-
-      var F = function () {};
-
-      return {
-        s: F,
-        n: function () {
-          if (i >= o.length) return {
-            done: true
-          };
-          return {
-            done: false,
-            value: o[i++]
-          };
-        },
-        e: function (e) {
-          throw e;
-        },
-        f: F
-      };
-    }
-
-    throw new TypeError("Invalid attempt to iterate non-iterable instance.\nIn order to be iterable, non-array objects must have a [Symbol.iterator]() method.");
-  }
-
-  var normalCompletion = true,
-      didErr = false,
-      err;
-  return {
-    s: function () {
-      it = it.call(o);
-    },
-    n: function () {
-      var step = it.next();
-      normalCompletion = step.done;
-      return step;
-    },
-    e: function (e) {
-      didErr = true;
-      err = e;
-    },
-    f: function () {
-      try {
-        if (!normalCompletion && it.return != null) it.return();
-      } finally {
-        if (didErr) throw err;
+      if (desc.get) {
+        return desc.get.call(arguments.length < 3 ? target : receiver);
       }
-    }
-  };
+
+      return desc.value;
+    };
+  }
+
+  return _get.apply(this, arguments);
 }
 
 /* eslint-disable */
@@ -232,7 +114,7 @@ var __extends$1 = undefined && undefined.__extends || function () {
       d.__proto__ = b;
     } || function (d, b) {
       for (var p in b) {
-        if (b.hasOwnProperty(p)) d[p] = b[p];
+        if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
       }
     };
 
@@ -240,6 +122,8 @@ var __extends$1 = undefined && undefined.__extends || function () {
   };
 
   return function (d, b) {
+    if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+
     _extendStatics(d, b);
 
     function __() {
@@ -1064,7 +948,7 @@ var spinewebgl;
     };
 
     AttachmentTimeline.prototype.setAttachment = function (skeleton, slot, attachmentName) {
-      slot.attachment = attachmentName == null ? null : skeleton.getAttachment(this.slotIndex, attachmentName);
+      slot.setAttachment(attachmentName == null ? null : skeleton.getAttachment(this.slotIndex, attachmentName));
     };
 
     return AttachmentTimeline;
@@ -1975,7 +1859,7 @@ var spinewebgl;
 
         if (slot.attachmentState == setupState) {
           var attachmentName = slot.data.attachmentName;
-          slot.attachment = attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName);
+          slot.setAttachment(attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName));
         }
       }
 
@@ -2038,7 +1922,12 @@ var spinewebgl;
               alpha = alphaMix;
               break;
 
-            case AnimationState.HOLD:
+            case AnimationState.HOLD_SUBSEQUENT:
+              timelineBlend = blend;
+              alpha = alphaHold;
+              break;
+
+            case AnimationState.HOLD_FIRST:
               timelineBlend = spine.MixBlend.setup;
               alpha = alphaHold;
               break;
@@ -2083,7 +1972,7 @@ var spinewebgl;
     };
 
     AnimationState.prototype.setAttachment = function (skeleton, slot, attachmentName, attachments) {
-      slot.attachment = attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName);
+      slot.setAttachment(attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName));
       if (attachments) slot.attachmentState = this.unkeyedState + AnimationState.CURRENT;
     };
 
@@ -2410,8 +2299,7 @@ var spinewebgl;
 
       if (to != null && to.holdPrevious) {
         for (var i = 0; i < timelinesCount; i++) {
-          propertyIDs.add(timelines[i].getPropertyId());
-          timelineMode[i] = AnimationState.HOLD;
+          timelineMode[i] = propertyIDs.add(timelines[i].getPropertyId()) ? AnimationState.HOLD_FIRST : AnimationState.HOLD_SUBSEQUENT;
         }
 
         return;
@@ -2435,7 +2323,7 @@ var spinewebgl;
             break;
           }
 
-          timelineMode[i] = AnimationState.HOLD;
+          timelineMode[i] = AnimationState.HOLD_FIRST;
         }
       }
     };
@@ -2466,8 +2354,9 @@ var spinewebgl;
     AnimationState.emptyAnimation = new spine.Animation("<empty>", [], 0);
     AnimationState.SUBSEQUENT = 0;
     AnimationState.FIRST = 1;
-    AnimationState.HOLD = 2;
-    AnimationState.HOLD_MIX = 3;
+    AnimationState.HOLD_SUBSEQUENT = 2;
+    AnimationState.HOLD_FIRST = 3;
+    AnimationState.HOLD_MIX = 4;
     AnimationState.SETUP = 1;
     AnimationState.CURRENT = 2;
     return AnimationState;
@@ -2794,8 +2683,8 @@ var spinewebgl;
         _this.toLoad--;
         _this.loaded++;
       }, function (state, responseText) {
-        _this.errors[path] = "Couldn't load binary " + path + ": status " + this.status + ", " + responseText;
-        if (error) error(path, "Couldn't load binary " + path + ": status " + this.status + ", " + responseText);
+        _this.errors[path] = "Couldn't load binary " + path + ": status " + status + ", " + responseText;
+        if (error) error(path, "Couldn't load binary " + path + ": status " + status + ", " + responseText);
         _this.toLoad--;
         _this.loaded++;
       });
@@ -2820,8 +2709,8 @@ var spinewebgl;
         _this.toLoad--;
         _this.loaded++;
       }, function (state, responseText) {
-        _this.errors[path] = "Couldn't load text " + path + ": status " + this.status + ", " + responseText;
-        if (error) error(path, "Couldn't load text " + path + ": status " + this.status + ", " + responseText);
+        _this.errors[path] = "Couldn't load text " + path + ": status " + status + ", " + responseText;
+        if (error) error(path, "Couldn't load text " + path + ": status " + status + ", " + responseText);
         _this.toLoad--;
         _this.loaded++;
       });
@@ -2864,7 +2753,7 @@ var spinewebgl;
       img.src = path;
     };
 
-    AssetManager.prototype.loadTextureAtlas = function (path, imagePath, success, error) {
+    AssetManager.prototype.loadTextureAtlas = function (path, img, mapping, success, error) {
       var _this = this;
 
       if (success === void 0) {
@@ -2875,7 +2764,8 @@ var spinewebgl;
         error = null;
       }
 
-      path.lastIndexOf("/") >= 0 ? path.substring(0, path.lastIndexOf("/")) : "";
+      var parent = path.lastIndexOf("/") >= 0 ? path.substring(0, path.lastIndexOf("/")) : "";
+      var assets = _this.assets;
       path = this.pathPrefix + path;
       this.toLoad++;
       this.downloadText(path, function (atlasData) {
@@ -2886,24 +2776,17 @@ var spinewebgl;
 
         try {
           var atlas = new spine.TextureAtlas(atlasData, function (path) {
-            if (imagePath instanceof Array) {
-              var _iterator = _createForOfIteratorHelper(imagePath),
-                  _step;
+            var url = parent == "" ? path : parent + "/" + path;
 
-              try {
-                for (_iterator.s(); !(_step = _iterator.n()).done;) {
-                  var url = _step.value;
-                  atlasPages.push(url);
-                }
-              } catch (err) {
-                _iterator.e(err);
-              } finally {
-                _iterator.f();
+            if (!assets.hasOwnProperty(url)) {
+              if (!mapping) {
+                url = img;
+              } else {
+                url = mapping[url];
               }
-            } else {
-              atlasPages.push(imagePath);
             }
 
+            atlasPages.push(url);
             var image = document.createElement("img");
             image.width = 16;
             image.height = 16;
@@ -2928,7 +2811,19 @@ var spinewebgl;
               if (!pageLoadError) {
                 try {
                   var atlas = new spine.TextureAtlas(atlasData, function (path) {
-                    return _this.get(path);
+                    var url = parent == "" ? path : parent + "/" + path;
+
+                    var res = _this.get(url);
+
+                    if (!res) {
+                      if (!mapping) {
+                        res = _this.get(img);
+                      } else {
+                        res = _this.get(mapping[url]);
+                      }
+                    }
+
+                    return res;
                   });
                   _this.assets[path] = atlas;
                   if (success) success(path, atlas);
@@ -2967,8 +2862,8 @@ var spinewebgl;
           _loop_1(atlasPage);
         }
       }, function (state, responseText) {
-        _this.errors[path] = "Couldn't load texture atlas " + path + ": status " + this.status + ", " + responseText;
-        if (error) error(path, "Couldn't load texture atlas " + path + ": status " + this.status + ", " + responseText);
+        _this.errors[path] = "Couldn't load texture atlas " + path + ": status " + status + ", " + responseText;
+        if (error) error(path, "Couldn't load texture atlas " + path + ": status " + status + ", " + responseText);
         _this.toLoad--;
         _this.loaded++;
       });
@@ -3198,6 +3093,8 @@ var spinewebgl;
 
             if (s > 0.0001) {
               s = Math.abs(pa * pd - pb * pc) / s;
+              pa /= this.skeleton.scaleX;
+              pc /= this.skeleton.scaleY;
               pb = pc * s;
               pd = pa * s;
               prx = Math.atan2(pc, pa) * spine.MathUtils.radDeg;
@@ -3217,7 +3114,7 @@ var spinewebgl;
             this.b = pa * lb - pb * ld;
             this.c = pc * la + pd * lc;
             this.d = pc * lb + pd * ld;
-            return;
+            break;
           }
 
         case spine.TransformMode.NoScale:
@@ -3535,10 +3432,12 @@ var spinewebgl;
           break;
 
         case spine.TransformMode.NoRotationOrReflection:
-          rotationIK += Math.atan2(pc, pa) * spine.MathUtils.radDeg;
-          var ps = Math.abs(pa * pd - pb * pc) / (pa * pa + pc * pc);
-          pb = -pc * ps;
-          pd = pa * ps;
+          var s = Math.abs(pa * pd - pb * pc) / (pa * pa + pc * pc);
+          var sa = pa / bone.skeleton.scaleX;
+          var sc = pc / bone.skeleton.scaleY;
+          pb = -sc * s * bone.skeleton.scaleX;
+          pd = sa * s * bone.skeleton.scaleY;
+          rotationIK += Math.atan2(sc, sa) * spine.MathUtils.radDeg;
 
         default:
           var x = targetX - p.worldX,
@@ -4394,18 +4293,41 @@ var spinewebgl;
 
       path = this.pathPrefix + path;
       if (!this.queueAsset(clientId, textureLoader, path)) return;
-      var img = new Image();
-      img.crossOrigin = "anonymous";
+      var isBrowser = !!(typeof window !== 'undefined' && typeof navigator !== 'undefined' && window.document);
+      var isWebWorker = !isBrowser && typeof importScripts !== 'undefined';
 
-      img.onload = function (ev) {
-        _this.rawAssets[path] = img;
-      };
+      if (isWebWorker) {
+        var options = {
+          mode: "cors"
+        };
+        fetch(path, options).then(function (response) {
+          if (!response.ok) {
+            _this.errors[path] = "Couldn't load image " + path;
+          }
 
-      img.onerror = function (ev) {
-        _this.errors[path] = "Couldn't load image " + path;
-      };
+          return response.blob();
+        }).then(function (blob) {
+          return createImageBitmap(blob, {
+            premultiplyAlpha: 'none',
+            colorSpaceConversion: 'none'
+          });
+        }).then(function (bitmap) {
+          _this.rawAssets[path] = bitmap;
+        });
+      } else {
+        var img_1 = new Image();
+        img_1.crossOrigin = "anonymous";
 
-      img.src = path;
+        img_1.onload = function (ev) {
+          _this.rawAssets[path] = img_1;
+        };
+
+        img_1.onerror = function (ev) {
+          _this.errors[path] = "Couldn't load image " + path;
+        };
+
+        img_1.src = path;
+      }
     };
 
     SharedAssetManager.prototype.get = function (clientId, path) {
@@ -4416,6 +4338,9 @@ var spinewebgl;
     };
 
     SharedAssetManager.prototype.updateClientAssets = function (clientAssets) {
+      var isBrowser = !!(typeof window !== 'undefined' && typeof navigator !== 'undefined' && window.document);
+      var isWebWorker = !isBrowser && typeof importScripts !== 'undefined';
+
       for (var i = 0; i < clientAssets.toLoad.length; i++) {
         var path = clientAssets.toLoad[i];
         var asset = clientAssets.assets[path];
@@ -4424,10 +4349,18 @@ var spinewebgl;
           var rawAsset = this.rawAssets[path];
           if (rawAsset === null || rawAsset === undefined) continue;
 
-          if (rawAsset instanceof HTMLImageElement) {
-            clientAssets.assets[path] = clientAssets.textureLoader(rawAsset);
+          if (isWebWorker) {
+            if (rawAsset instanceof ImageBitmap) {
+              clientAssets.assets[path] = clientAssets.textureLoader(rawAsset);
+            } else {
+              clientAssets.assets[path] = rawAsset;
+            }
           } else {
-            clientAssets.assets[path] = rawAsset;
+            if (rawAsset instanceof HTMLImageElement) {
+              clientAssets.assets[path] = clientAssets.textureLoader(rawAsset);
+            } else {
+              clientAssets.assets[path] = rawAsset;
+            }
           }
         }
       }
@@ -9015,8 +8948,7 @@ var spinewebgl;
 
     Pool.prototype.freeAll = function (items) {
       for (var i = 0; i < items.length; i++) {
-        if (items[i].reset) items[i].reset();
-        this.items[i] = items[i];
+        this.free(items[i]);
       }
     };
 
@@ -9975,6 +9907,7 @@ var spinewebgl;
         }
 
         this.bind();
+        gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, 0);
         if (GLTexture.DISABLE_UNPACK_PREMULTIPLIED_ALPHA_WEBGL) gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, this._image);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
@@ -9990,10 +9923,13 @@ var spinewebgl;
       };
 
       GLTexture.prototype.bind = function (unit) {
-        // if (unit === void 0) { unit = 0; }
-        var gl = this.context.gl; // this.boundUnit = unit;
+        if (unit === void 0) {
+          unit = 0;
+        }
 
-        gl.activeTexture(gl.TEXTURE0 + this.boundUnit);
+        var gl = this.context.gl;
+        this.boundUnit = unit;
+        gl.activeTexture(gl.TEXTURE0 + unit);
         gl.bindTexture(gl.TEXTURE_2D, this.texture);
       };
 
@@ -12838,8 +12774,6 @@ var spinewebgl;
   (function (webgl) {
     var ManagedWebGLRenderingContext = function () {
       function ManagedWebGLRenderingContext(canvasOrContext, contextConfig) {
-        var _this = this;
-
         if (contextConfig === void 0) {
           contextConfig = {
             alpha: "true"
@@ -12848,26 +12782,31 @@ var spinewebgl;
 
         this.restorables = new Array();
 
-        if (canvasOrContext instanceof HTMLCanvasElement) {
-          var canvas = canvasOrContext;
-          this.gl = canvas.getContext("webgl2", contextConfig) || canvas.getContext("webgl", contextConfig);
-          this.canvas = canvas;
-          canvas.addEventListener("webglcontextlost", function (e) {
-
-            if (e) {
-              e.preventDefault();
-            }
-          });
-          canvas.addEventListener("webglcontextrestored", function (e) {
-            for (var i = 0, n = _this.restorables.length; i < n; i++) {
-              _this.restorables[i].restore();
-            }
-          });
+        if (!(canvasOrContext instanceof WebGLRenderingContext || canvasOrContext instanceof WebGL2RenderingContext)) {
+          this.setupCanvas(canvasOrContext, contextConfig);
         } else {
           this.gl = canvasOrContext;
           this.canvas = this.gl.canvas;
         }
       }
+
+      ManagedWebGLRenderingContext.prototype.setupCanvas = function (canvas, contextConfig) {
+        var _this = this;
+
+        this.gl = canvas.getContext("webgl2", contextConfig) || canvas.getContext("webgl", contextConfig);
+        this.canvas = canvas;
+        canvas.addEventListener("webglcontextlost", function (e) {
+
+          if (e) {
+            e.preventDefault();
+          }
+        });
+        canvas.addEventListener("webglcontextrestored", function (e) {
+          for (var i = 0, n = _this.restorables.length; i < n; i++) {
+            _this.restorables[i].restore();
+          }
+        });
+      };
 
       ManagedWebGLRenderingContext.prototype.addRestorable = function (restorable) {
         this.restorables.push(restorable);
@@ -12960,6 +12899,51 @@ var _SpineWebGL$webgl = SpineWebGL.webgl,
     Matrix4 = _SpineWebGL$webgl.Matrix4; // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 
 var GlobalSpineRendererMap$1 = new WeakMap();
+var _karas$math$matrix = karas.math.matrix,
+    isE = _karas$math$matrix.isE,
+    multiply = _karas$math$matrix.multiply,
+    identity = _karas$math$matrix.identity,
+    calPoint = _karas$math$matrix.calPoint,
+    _karas$mode = karas.mode;
+    _karas$mode.CANVAS;
+    var WEBGL = _karas$mode.WEBGL,
+    _karas$enums$STYLE_KE = karas.enums.STYLE_KEY,
+    TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
+    TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
+    calMatrixByOrigin = karas.style.transform.calMatrixByOrigin,
+    _karas$util = karas.util,
+    equalArr = _karas$util.equalArr,
+    assignMatrix = _karas$util.assignMatrix;
+
+var $$1 = /*#__PURE__*/function (_karas$Geom) {
+  _inherits($, _karas$Geom);
+
+  function $() {
+    return _karas$Geom.apply(this, arguments) || this;
+  }
+
+  _createClass($, [{
+    key: "render",
+    value: function render() {}
+  }]);
+
+  return $;
+}(karas.Geom);
+
+function calWebglMatrix(node, cx, cy) {
+  var x = node.__x1,
+      y = node.__y1;
+  var currentStyle = node.currentStyle,
+      computedStyle = node.computedStyle;
+  var matrix = computedStyle[TRANSFORM];
+
+  if (matrix && !isE(matrix)) {
+    var tfo = currentStyle[TRANSFORM_ORIGIN];
+    matrix = calMatrixByOrigin(matrix, (cx - x - tfo[0]) / cx, (cy - y - tfo[1]) / cy);
+  }
+
+  return matrix;
+}
 /**
  * props参数介绍：
  * atlas 必填，url。
@@ -12975,17 +12959,14 @@ var GlobalSpineRendererMap$1 = new WeakMap();
  * debugger
  */
 
+
 var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
   _inherits(Spine38WebGL, _karas$Component);
-
-  var _super = _createSuper(Spine38WebGL);
 
   function Spine38WebGL(props) {
     var _this;
 
-    _classCallCheck(this, Spine38WebGL);
-
-    _this = _super.call(this, props);
+    _this = _karas$Component.call(this, props) || this;
 
     _defineProperty(_assertThisInitialized(_this), "verticesData", []);
 
@@ -12998,6 +12979,8 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
     _defineProperty(_assertThisInitialized(_this), "currentTime", Date.now());
 
     _defineProperty(_assertThisInitialized(_this), "mvp", new Matrix4());
+
+    _defineProperty(_assertThisInitialized(_this), "mapping", null);
 
     _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
       var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
@@ -13017,71 +13000,56 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       _this.animationsList = data.animations;
     });
 
-    _this.animationName = props.animation || 'idle';
+    _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
-    _this.loopCount = props.loopCount || Infinity; // 一开始就先加载资源
-    // this.load();
-
+    _this.loopCount = props.loopCount || Infinity;
     return _this;
   }
 
   _createClass(Spine38WebGL, [{
-    key: "shouldComponentUpdate",
-    value: function shouldComponentUpdate() {
-      return false;
-    }
-  }, {
     key: "load",
     value: function load() {
       var _this2 = this;
 
-      this.assetManager.loadTextureAtlas(this.props.atlas, this.props.image, function () {}, function (e) {
-        var _this2$props$onError, _this2$props;
+      var assetManager = this.assetManager;
+      var img = this.props.image;
 
-        (_this2$props$onError = (_this2$props = _this2.props).onError) === null || _this2$props$onError === void 0 ? void 0 : _this2$props$onError.call(_this2$props, e);
-      });
-      this.assetManager.loadText(this.props.json, function () {}, function (e) {
-        var _this2$props$onError2, _this2$props2;
+      if (typeof img === 'string') {
+        assetManager.loadTexture(img);
+      } // 多个
+      else if (Array.isArray(img)) {
+        for (var i = 0, len = img.length; i < len; i++) {
+          assetManager.loadTexture(img[i]);
+        }
+      } // 多个且需要映射关系
+      else {
+        this.mapping = {};
 
-        (_this2$props$onError2 = (_this2$props2 = _this2.props).onError) === null || _this2$props$onError2 === void 0 ? void 0 : _this2$props$onError2.call(_this2$props2, e);
-      });
-
-      if (typeof this.props.image === 'string') {
-        this.assetManager.loadTexture(this.props.image, function () {}, function (e) {
-          var _this2$props$onError3, _this2$props3;
-
-          (_this2$props$onError3 = (_this2$props3 = _this2.props).onError) === null || _this2$props$onError3 === void 0 ? void 0 : _this2$props$onError3.call(_this2$props3, e);
-        });
-      } else {
-        var _iterator = _createForOfIteratorHelper(this.props.image),
-            _step;
-
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var item = _step.value;
-            this.assetManager.loadTexture(item, function () {}, function (e) {
-              var _this2$props$onError4, _this2$props4;
-
-              (_this2$props$onError4 = (_this2$props4 = _this2.props).onError) === null || _this2$props$onError4 === void 0 ? void 0 : _this2$props$onError4.call(_this2$props4, e);
-            });
+        for (var _i in img) {
+          if (img.hasOwnProperty(_i)) {
+            var item = img[_i];
+            this.mapping[_i] = item;
+            assetManager.loadTexture(item);
           }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
         }
       }
 
-      var i = setInterval(function () {
-        if (_this2.assetManager.isLoadingComplete()) {
-          var _this2$props$onLoad, _this2$props5;
+      assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+      assetManager.loadText(this.props.json);
 
-          clearInterval(i);
-          (_this2$props$onLoad = (_this2$props5 = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props5);
+      var onLoad = function onLoad() {
+        if (assetManager.isLoadingComplete()) {
+          var _this2$props$onLoad, _this2$props;
+
+          (_this2$props$onLoad = (_this2$props = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props);
 
           _this2.playAnimation();
+        } else {
+          karas.inject.requestAnimationFrame(onLoad);
         }
-      }, 1000);
+      };
+
+      onLoad();
     }
   }, {
     key: "initRender",
@@ -13092,7 +13060,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       if (!this.renderer) {
         this.renderer = new SkeletonRenderer$1(ctx);
         this.shader = Shader.newTwoColoredTextured(ctx);
-        this.mvp.ortho2d(0, 0, ctx.canvas.width - 1, ctx.canvas.height - 1);
+        this.mvp.ortho2d(0, 0, ctx.canvas.width, ctx.canvas.height);
         this.batcher = new PolygonBatcher(ctx);
         this.assetManager = new AssetManager$1(ctx, undefined, false, unit);
         this.load();
@@ -13116,80 +13084,167 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var _this3 = this;
 
       var fake = this.ref.fake;
-      fake.clearAnimate();
-      this.animation = fake.animate([{
-        backgroundColor: '#000'
-      }, {
-        backgroundColor: '#fff'
-      }], {
-        fps: this.props.fps || 60,
-        duration: 10000,
-        iterations: Infinity
+      fake.frameAnimate(function () {
+        fake.refresh();
       });
-      var texCache = this.root.texCache;
-      var unit = texCache.lockOneChannel();
       var isRender,
-          self = this;
+          self = this,
+          lastPm,
+          lastMatrix;
 
-      fake.render = function (renderMode, lv, ctx) {
-        var _this3$props$style$sc, _this3$props$style, _this3$props$style$sc2, _this3$props$style2, _this3$props$onFrame, _this3$props;
+      fake.render = function (renderMode, ctx, dx, dy) {
+        if (renderMode === WEBGL) {
+          var _this3$props$onFrame, _this3$props;
 
-        if (!_this3.renderer) {
-          _this3.initRender(ctx, unit);
+          if (!_this3.renderer) {
+            _this3.initRender(ctx, 0);
+          }
+
+          if (!_this3.bounds) {
+            return;
+          }
+
+          if (!isRender) {
+            var _self$props$onRender, _self$props;
+
+            isRender = true;
+            (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
+          }
+
+          var canvas = ctx.canvas;
+          var W = canvas.width,
+              H = canvas.height,
+              CX = W * 0.5,
+              CY = H * 0.5;
+
+          _this3.resize(canvas, ctx);
+
+          _this3.currentTime = Date.now() / 1000;
+          var delta = _this3.currentTime - _this3.lastTime;
+          _this3.lastTime = _this3.currentTime;
+          var bounds = _this3.bounds;
+          var size = bounds.size,
+              offset = bounds.offset;
+          var x = offset.x;
+          var y = offset.y;
+          var width = size.x;
+          var height = size.y;
+          var centerX = x + width * 0.5;
+          var centerY = y + height * 0.5;
+          var tfo = [centerX / CX, centerY / CY];
+          var pm = fake.matrixEvent;
+
+          if (lastPm && equalArr(pm, lastPm)) {
+            assignMatrix(_this3.mvp.values, lastMatrix);
+          } else {
+            // 先以骨骼原本的中心点为基准，应用节点的matrix
+            if (!isE(pm)) {
+              var m = identity(),
+                  node = fake;
+
+              while (node) {
+                var t = calWebglMatrix(node, CX, CY);
+
+                if (t) {
+                  m = multiply(t, m);
+                }
+
+                node = node.domParent;
+              } // root左上原点对齐中心，上下翻转y
+
+
+              _this3.mvp.translate(tfo[0], tfo[1], 0);
+
+              m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
+
+              _this3.mvp.multiplyLeft({
+                values: m
+              });
+
+              _this3.mvp.multiply({
+                values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+              });
+
+              _this3.mvp.translate(-tfo[0], -tfo[1], 0);
+            }
+
+            var fitSize = _this3.props.fitSize;
+            {
+              var scx = width / fake.width;
+              var scy = height / fake.height;
+              var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+
+              if (scale !== 1) {
+                // 对齐中心点后缩放
+                var _tfo = [centerX / CX, centerY / CY];
+
+                _this3.mvp.translate(_tfo[0], _tfo[1], 0);
+
+                var _m = karas.math.matrix.identity();
+
+                _m[0] = 1 / scale;
+                _m[5] = 1 / scale;
+
+                _this3.mvp.multiply({
+                  values: _m
+                });
+
+                _this3.mvp.translate(-_tfo[0] / scale, -_tfo[1] / scale, 0);
+              }
+            }
+
+            _this3.mvp.translate(tfo[0], tfo[1], 0); // 还原位置，先对齐中心点，再校正
+
+
+            var x0 = fake.x + fake.width * 0.5;
+            var y0 = fake.y + fake.height * 0.5;
+            var p1 = calPoint({
+              x: centerX,
+              y: centerY
+            }, _this3.mvp.values);
+            var p = calPoint({
+              x: x0,
+              y: y0
+            }, pm);
+
+            _this3.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
+
+            _this3.mvp.translate(-p1.x, -p1.y, 0);
+
+            lastMatrix = _this3.mvp.values.slice(0);
+          }
+
+          lastPm = pm.slice(0);
+
+          _this3.state.update(delta);
+
+          _this3.state.apply(_this3.skeleton);
+
+          _this3.skeleton.updateWorldTransform(); // Bind the shader and set the texture and model-view-projection matrix.
+
+
+          _this3.shader.bind();
+
+          _this3.shader.setUniformi(Shader.SAMPLER, 0);
+
+          _this3.shader.setUniform4x4f(Shader.MVP_MATRIX, _this3.mvp.values); // Start the batch and tell the SkeletonRenderer to render the active skeleton.
+
+
+          if (!_this3.batcher.isDrawing) {
+            _this3.batcher.begin(_this3.shader);
+          }
+
+          _this3.renderer.premultipliedAlpha = !!_this3.props.premultipliedAlpha;
+
+          _this3.renderer.draw(_this3.batcher, _this3.skeleton); // this.batcher.end();
+
+
+          _this3.shader.unbind();
+
+          ctx.useProgram(ctx.program); // debugger
+
+          (_this3$props$onFrame = (_this3$props = _this3.props).onFrame) === null || _this3$props$onFrame === void 0 ? void 0 : _this3$props$onFrame.call(_this3$props);
         }
-
-        if (!_this3.bounds) {
-          return;
-        }
-
-        if (!isRender) {
-          var _self$props$onRender, _self$props;
-
-          isRender = true;
-          (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
-        }
-
-        _this3.resize(ctx.canvas, ctx);
-
-        var size = fake.getComputedStyle(['width', 'height']);
-        _this3.currentTime = Date.now() / 1000;
-        var delta = _this3.currentTime - _this3.lastTime;
-        _this3.lastTime = _this3.currentTime;
-
-        _this3.mvp.translate(-1 + (size.width + fake.x * 2) / ctx.canvas.width, 1 - (size.height + fake.y * 2) / ctx.canvas.height, 0);
-
-        _this3.mvp.values[0] *= (_this3$props$style$sc = (_this3$props$style = _this3.props.style) === null || _this3$props$style === void 0 ? void 0 : _this3$props$style.scaleX) !== null && _this3$props$style$sc !== void 0 ? _this3$props$style$sc : 1;
-        _this3.mvp.values[5] *= (_this3$props$style$sc2 = (_this3$props$style2 = _this3.props.style) === null || _this3$props$style2 === void 0 ? void 0 : _this3$props$style2.scaleY) !== null && _this3$props$style$sc2 !== void 0 ? _this3$props$style$sc2 : 1; // TODO Scale
-
-        _this3.state.update(delta);
-
-        _this3.state.apply(_this3.skeleton);
-
-        _this3.skeleton.updateWorldTransform(); // Bind the shader and set the texture and model-view-projection matrix.
-
-
-        _this3.shader.bind();
-
-        _this3.shader.setUniformi(Shader.SAMPLER, 0);
-
-        _this3.shader.setUniform4x4f(Shader.MVP_MATRIX, _this3.mvp.values); // Start the batch and tell the SkeletonRenderer to render the active skeleton.
-
-
-        if (!_this3.batcher.isDrawing) {
-          _this3.batcher.begin(_this3.shader);
-        }
-
-        _this3.renderer.premultipliedAlpha = false;
-
-        _this3.renderer.draw(_this3.batcher, _this3.skeleton); // this.batcher.end();
-
-
-        _this3.shader.unbind(); // console.warn(ctx.program);
-
-
-        ctx.useProgram(ctx.program); // debugger
-
-        (_this3$props$onFrame = (_this3$props = _this3.props).onFrame) === null || _this3$props$onFrame === void 0 ? void 0 : _this3$props$onFrame.call(_this3$props);
       };
     }
   }, {
@@ -13199,7 +13254,10 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
           _this$props,
           _this4 = this;
 
-      if (skin === undefined) skin = "default"; // Load the texture atlas using name.atlas from the AssetManager.
+      if (skin === undefined || skin === null) {
+        skin = 'default';
+      } // Load the texture atlas using name.atlas from the AssetManager.
+
 
       var atlas = this.assetManager.get(this.props.atlas); // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
 
@@ -13210,7 +13268,12 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
       this.skeleton = new Skeleton$1(skeletonData);
       this.skeleton.setSkinByName(skin);
-      var bounds = calculateBounds$1(this.skeleton); // Create an AnimationState, and set the initial animation in looping mode.
+      var bounds = calculateBounds$1(this.skeleton);
+
+      if (!initialAnimation) {
+        initialAnimation = skeletonData.animations[0].name;
+      } // Create an AnimationState, and set the initial animation in looping mode.
+
 
       var animationStateData = new AnimationStateData$1(this.skeleton.data);
       var animationState = new AnimationState$1(animationStateData);
@@ -13243,23 +13306,16 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "render",
     value: function render() {
-      return karas.parse({
-        tagName: 'div',
-        props: {
-          style: _objectSpread2({}, this.props.style || {}),
-          ref: "mesh"
-        },
-        children: [{
-          tagName: '$polygon',
-          props: {
-            ref: "fake",
-            style: {
-              width: '100%',
-              height: '100%'
-            }
-          }
-        }]
-      });
+      return karas.createElement("div", {
+        ref: "mesh",
+        style: this.props.style || {}
+      }, karas.createElement($$1, {
+        ref: "fake",
+        style: {
+          width: '100%',
+          height: '100%'
+        }
+      }));
     }
   }]);
 
@@ -13287,7 +13343,7 @@ var __extends = undefined && undefined.__extends || function () {
       d.__proto__ = b;
     } || function (d, b) {
       for (var p in b) {
-        if (b.hasOwnProperty(p)) d[p] = b[p];
+        if (Object.prototype.hasOwnProperty.call(b, p)) d[p] = b[p];
       }
     };
 
@@ -13295,6 +13351,8 @@ var __extends = undefined && undefined.__extends || function () {
   };
 
   return function (d, b) {
+    if (typeof b !== "function" && b !== null) throw new TypeError("Class extends value " + String(b) + " is not a constructor or null");
+
     _extendStatics(d, b);
 
     function __() {
@@ -14119,7 +14177,7 @@ var spine;
     };
 
     AttachmentTimeline.prototype.setAttachment = function (skeleton, slot, attachmentName) {
-      slot.attachment = attachmentName == null ? null : skeleton.getAttachment(this.slotIndex, attachmentName);
+      slot.setAttachment(attachmentName == null ? null : skeleton.getAttachment(this.slotIndex, attachmentName));
     };
 
     return AttachmentTimeline;
@@ -15030,7 +15088,7 @@ var spine;
 
         if (slot.attachmentState == setupState) {
           var attachmentName = slot.data.attachmentName;
-          slot.attachment = attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName);
+          slot.setAttachment(attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName));
         }
       }
 
@@ -15093,7 +15151,12 @@ var spine;
               alpha = alphaMix;
               break;
 
-            case AnimationState.HOLD:
+            case AnimationState.HOLD_SUBSEQUENT:
+              timelineBlend = blend;
+              alpha = alphaHold;
+              break;
+
+            case AnimationState.HOLD_FIRST:
               timelineBlend = spine.MixBlend.setup;
               alpha = alphaHold;
               break;
@@ -15138,7 +15201,7 @@ var spine;
     };
 
     AnimationState.prototype.setAttachment = function (skeleton, slot, attachmentName, attachments) {
-      slot.attachment = attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName);
+      slot.setAttachment(attachmentName == null ? null : skeleton.getAttachment(slot.data.index, attachmentName));
       if (attachments) slot.attachmentState = this.unkeyedState + AnimationState.CURRENT;
     };
 
@@ -15465,8 +15528,7 @@ var spine;
 
       if (to != null && to.holdPrevious) {
         for (var i = 0; i < timelinesCount; i++) {
-          propertyIDs.add(timelines[i].getPropertyId());
-          timelineMode[i] = AnimationState.HOLD;
+          timelineMode[i] = propertyIDs.add(timelines[i].getPropertyId()) ? AnimationState.HOLD_FIRST : AnimationState.HOLD_SUBSEQUENT;
         }
 
         return;
@@ -15490,7 +15552,7 @@ var spine;
             break;
           }
 
-          timelineMode[i] = AnimationState.HOLD;
+          timelineMode[i] = AnimationState.HOLD_FIRST;
         }
       }
     };
@@ -15521,8 +15583,9 @@ var spine;
     AnimationState.emptyAnimation = new spine.Animation("<empty>", [], 0);
     AnimationState.SUBSEQUENT = 0;
     AnimationState.FIRST = 1;
-    AnimationState.HOLD = 2;
-    AnimationState.HOLD_MIX = 3;
+    AnimationState.HOLD_SUBSEQUENT = 2;
+    AnimationState.HOLD_FIRST = 3;
+    AnimationState.HOLD_MIX = 4;
     AnimationState.SETUP = 1;
     AnimationState.CURRENT = 2;
     return AnimationState;
@@ -15849,8 +15912,8 @@ var spine;
         _this.toLoad--;
         _this.loaded++;
       }, function (state, responseText) {
-        _this.errors[path] = "Couldn't load binary " + path + ": status " + this.status + ", " + responseText;
-        if (error) error(path, "Couldn't load binary " + path + ": status " + this.status + ", " + responseText);
+        _this.errors[path] = "Couldn't load binary " + path + ": status " + status + ", " + responseText;
+        if (error) error(path, "Couldn't load binary " + path + ": status " + status + ", " + responseText);
         _this.toLoad--;
         _this.loaded++;
       });
@@ -15875,8 +15938,8 @@ var spine;
         _this.toLoad--;
         _this.loaded++;
       }, function (state, responseText) {
-        _this.errors[path] = "Couldn't load text " + path + ": status " + this.status + ", " + responseText;
-        if (error) error(path, "Couldn't load text " + path + ": status " + this.status + ", " + responseText);
+        _this.errors[path] = "Couldn't load text " + path + ": status " + status + ", " + responseText;
+        if (error) error(path, "Couldn't load text " + path + ": status " + status + ", " + responseText);
         _this.toLoad--;
         _this.loaded++;
       });
@@ -16005,8 +16068,8 @@ var spine;
           _loop_1(atlasPage);
         }
       }, function (state, responseText) {
-        _this.errors[path] = "Couldn't load texture atlas " + path + ": status " + this.status + ", " + responseText;
-        if (error) error(path, "Couldn't load texture atlas " + path + ": status " + this.status + ", " + responseText);
+        _this.errors[path] = "Couldn't load texture atlas " + path + ": status " + status + ", " + responseText;
+        if (error) error(path, "Couldn't load texture atlas " + path + ": status " + status + ", " + responseText);
         _this.toLoad--;
         _this.loaded++;
       });
@@ -16236,6 +16299,8 @@ var spine;
 
             if (s > 0.0001) {
               s = Math.abs(pa * pd - pb * pc) / s;
+              pa /= this.skeleton.scaleX;
+              pc /= this.skeleton.scaleY;
               pb = pc * s;
               pd = pa * s;
               prx = Math.atan2(pc, pa) * spine.MathUtils.radDeg;
@@ -16255,7 +16320,7 @@ var spine;
             this.b = pa * lb - pb * ld;
             this.c = pc * la + pd * lc;
             this.d = pc * lb + pd * ld;
-            return;
+            break;
           }
 
         case spine.TransformMode.NoScale:
@@ -16573,10 +16638,12 @@ var spine;
           break;
 
         case spine.TransformMode.NoRotationOrReflection:
-          rotationIK += Math.atan2(pc, pa) * spine.MathUtils.radDeg;
-          var ps = Math.abs(pa * pd - pb * pc) / (pa * pa + pc * pc);
-          pb = -pc * ps;
-          pd = pa * ps;
+          var s = Math.abs(pa * pd - pb * pc) / (pa * pa + pc * pc);
+          var sa = pa / bone.skeleton.scaleX;
+          var sc = pc / bone.skeleton.scaleY;
+          pb = -sc * s * bone.skeleton.scaleX;
+          pd = sa * s * bone.skeleton.scaleY;
+          rotationIK += Math.atan2(sc, sa) * spine.MathUtils.radDeg;
 
         default:
           var x = targetX - p.worldX,
@@ -17432,18 +17499,41 @@ var spine;
 
       path = this.pathPrefix + path;
       if (!this.queueAsset(clientId, textureLoader, path)) return;
-      var img = new Image();
-      img.crossOrigin = "anonymous";
+      var isBrowser = !!(typeof window !== 'undefined' && typeof navigator !== 'undefined' && window.document);
+      var isWebWorker = !isBrowser && typeof importScripts !== 'undefined';
 
-      img.onload = function (ev) {
-        _this.rawAssets[path] = img;
-      };
+      if (isWebWorker) {
+        var options = {
+          mode: "cors"
+        };
+        fetch(path, options).then(function (response) {
+          if (!response.ok) {
+            _this.errors[path] = "Couldn't load image " + path;
+          }
 
-      img.onerror = function (ev) {
-        _this.errors[path] = "Couldn't load image " + path;
-      };
+          return response.blob();
+        }).then(function (blob) {
+          return createImageBitmap(blob, {
+            premultiplyAlpha: 'none',
+            colorSpaceConversion: 'none'
+          });
+        }).then(function (bitmap) {
+          _this.rawAssets[path] = bitmap;
+        });
+      } else {
+        var img_1 = new Image();
+        img_1.crossOrigin = "anonymous";
 
-      img.src = path;
+        img_1.onload = function (ev) {
+          _this.rawAssets[path] = img_1;
+        };
+
+        img_1.onerror = function (ev) {
+          _this.errors[path] = "Couldn't load image " + path;
+        };
+
+        img_1.src = path;
+      }
     };
 
     SharedAssetManager.prototype.get = function (clientId, path) {
@@ -17454,6 +17544,9 @@ var spine;
     };
 
     SharedAssetManager.prototype.updateClientAssets = function (clientAssets) {
+      var isBrowser = !!(typeof window !== 'undefined' && typeof navigator !== 'undefined' && window.document);
+      var isWebWorker = !isBrowser && typeof importScripts !== 'undefined';
+
       for (var i = 0; i < clientAssets.toLoad.length; i++) {
         var path = clientAssets.toLoad[i];
         var asset = clientAssets.assets[path];
@@ -17462,10 +17555,18 @@ var spine;
           var rawAsset = this.rawAssets[path];
           if (rawAsset === null || rawAsset === undefined) continue;
 
-          if (rawAsset instanceof HTMLImageElement) {
-            clientAssets.assets[path] = clientAssets.textureLoader(rawAsset);
+          if (isWebWorker) {
+            if (rawAsset instanceof ImageBitmap) {
+              clientAssets.assets[path] = clientAssets.textureLoader(rawAsset);
+            } else {
+              clientAssets.assets[path] = rawAsset;
+            }
           } else {
-            clientAssets.assets[path] = rawAsset;
+            if (rawAsset instanceof HTMLImageElement) {
+              clientAssets.assets[path] = clientAssets.textureLoader(rawAsset);
+            } else {
+              clientAssets.assets[path] = rawAsset;
+            }
           }
         }
       }
@@ -22053,8 +22154,7 @@ var spine;
 
     Pool.prototype.freeAll = function (items) {
       for (var i = 0; i < items.length; i++) {
-        if (items[i].reset) items[i].reset();
-        this.items[i] = items[i];
+        this.free(items[i]);
       }
     };
 
@@ -22565,7 +22665,7 @@ var spine;
       this.copyTo(copy);
       copy.lengths = new Array(this.lengths.length);
       spine.Utils.arrayCopy(this.lengths, 0, copy.lengths, 0, this.lengths.length);
-      copy.closed = this.closed;
+      copy.closed = closed;
       copy.constantSpeed = this.constantSpeed;
       copy.color.setFromColor(this.color);
       return copy;
@@ -22935,8 +23035,6 @@ var spine;
         ctx.save();
 
         for (var i = 0, n = drawOrder.length; i < n; i++) {
-          var _color$a;
-
           var slot = drawOrder[i];
           if (!slot.bone.active) continue;
           var attachment = slot.getAttachment();
@@ -22978,7 +23076,7 @@ var spine;
 
           ctx.scale(1, -1);
           ctx.translate(-w / 2, -h / 2);
-          ctx.globalAlpha = (_color$a = color.a) !== null && _color$a !== void 0 ? _color$a : 1;
+          ctx.globalAlpha = color.a;
           ctx.drawImage(image, region.x, region.y, w, h, 0, 0, w, h);
           if (this.debugRendering) ctx.strokeRect(0, 0, w, h);
           ctx.restore();
@@ -23012,8 +23110,6 @@ var spine;
           } else continue;
 
           if (texture != null) {
-            var _color$a2;
-
             slot.data.blendMode;
 
             var skeleton_2 = slot.bone.skeleton;
@@ -23024,8 +23120,7 @@ var spine;
             var color = this.tempColor;
             color.set(skeletonColor.r * slotColor.r * attachmentColor.r, skeletonColor.g * slotColor.g * attachmentColor.g, skeletonColor.b * slotColor.b * attachmentColor.b, alpha);
             var ctx = this.ctx;
-            ctx.globalAlpha = (_color$a2 = color.a) !== null && _color$a2 !== void 0 ? _color$a2 : 1;
-            var wd = 1;
+            ctx.globalAlpha = color.a;
 
             for (var j = 0; j < triangles.length; j += 3) {
               var t1 = triangles[j] * 8,
@@ -23043,43 +23138,6 @@ var spine;
                   y2 = vertices[t3 + 1],
                   u2 = vertices[t3 + 6],
                   v2 = vertices[t3 + 7];
-
-              if (x0 === Math.min(x0, x1, x2)) {
-                x0 -= wd;
-              } else if (x0 === Math.max(x0, x1, x2)) {
-                x0 += wd;
-              }
-
-              if (x1 === Math.min(x0, x1, x2)) {
-                x1 -= wd;
-              } else if (x1 === Math.max(x0, x1, x2)) {
-                x1 += wd;
-              }
-
-              if (x2 === Math.min(x0, x1, x2)) {
-                x2 -= wd;
-              } else if (x2 === Math.max(x0, x1, x2)) {
-                x2 += wd;
-              }
-
-              if (y0 === Math.min(x0, x1, x2)) {
-                y0 -= wd;
-              } else if (y0 === Math.max(x0, x1, x2)) {
-                y0 += wd;
-              }
-
-              if (y1 === Math.min(x0, x1, x2)) {
-                y1 -= wd;
-              } else if (y1 === Math.max(x0, x1, x2)) {
-                y1 += wd;
-              }
-
-              if (y2 === Math.min(x0, x1, x2)) {
-                y2 -= wd;
-              } else if (y2 === Math.max(x0, x1, x2)) {
-                y2 += wd;
-              }
-
               this.drawTriangle(texture, x0, y0, u0, v0, x1, y1, u1, v1, x2, y2, u2, v2);
 
               if (this.debugRendering) {
@@ -23227,6 +23285,29 @@ var _SpineCanvas$canvas = SpineCanvas.canvas,
     AssetManager = _SpineCanvas$canvas.AssetManager; // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 
 var GlobalSpineRendererMap = new WeakMap();
+
+var $ = /*#__PURE__*/function (_karas$Geom) {
+  _inherits($, _karas$Geom);
+
+  function $() {
+    return _karas$Geom.apply(this, arguments) || this;
+  }
+
+  _createClass($, [{
+    key: "calContent",
+    value: function calContent(currentStyle, computedStyle) {
+      var res = _get(_getPrototypeOf($.prototype), "calContent", this).call(this, currentStyle, computedStyle);
+
+      if (res) {
+        return res;
+      }
+
+      return true;
+    }
+  }]);
+
+  return $;
+}(karas.Geom);
 /**
  * props参数介绍：
  * atlas 必填，url。
@@ -23242,17 +23323,14 @@ var GlobalSpineRendererMap = new WeakMap();
  * debugger
  */
 
+
 var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   _inherits(Spine38Canvas, _karas$Component);
-
-  var _super = _createSuper(Spine38Canvas);
 
   function Spine38Canvas(props) {
     var _this;
 
-    _classCallCheck(this, Spine38Canvas);
-
-    _this = _super.call(this, props);
+    _this = _karas$Component.call(this, props) || this;
 
     _defineProperty(_assertThisInitialized(_this), "verticesData", []);
 
@@ -23263,6 +23341,8 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
     _defineProperty(_assertThisInitialized(_this), "lastTime", Date.now());
 
     _defineProperty(_assertThisInitialized(_this), "currentTime", Date.now());
+
+    _defineProperty(_assertThisInitialized(_this), "mapping", null);
 
     _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
       var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
@@ -23282,7 +23362,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       _this.animationsList = data.animations;
     });
 
-    _this.animationName = props.animation || 'idle';
+    _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
     _this.loopCount = props.loopCount || Infinity; // 一开始就先加载资源
 
@@ -23292,47 +23372,48 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }
 
   _createClass(Spine38Canvas, [{
-    key: "shouldComponentUpdate",
-    value: function shouldComponentUpdate() {
-      return false;
-    }
-  }, {
     key: "load",
     value: function load() {
       var _this2 = this;
 
-      this.assetManager = new AssetManager();
-      this.assetManager.loadText(this.props.atlas);
-      this.assetManager.loadText(this.props.json);
+      var assetManager = this.assetManager = new AssetManager();
+      assetManager.loadText(this.props.atlas);
+      assetManager.loadText(this.props.json);
+      var img = this.props.image;
 
-      if (typeof this.props.image === 'string') {
-        this.assetManager.loadTexture(this.props.image);
-      } else {
-        var _iterator = _createForOfIteratorHelper(this.props.image),
-            _step;
+      if (typeof img === 'string') {
+        assetManager.loadTexture(img);
+      } // 多个
+      else if (Array.isArray(img)) {
+        for (var i = 0, len = img.length; i < len; i++) {
+          assetManager.loadTexture(img[i]);
+        }
+      } // 多个且需要映射关系
+      else {
+        this.mapping = {};
 
-        try {
-          for (_iterator.s(); !(_step = _iterator.n()).done;) {
-            var item = _step.value;
-            this.assetManager.loadTexture(item);
+        for (var _i in img) {
+          if (img.hasOwnProperty(_i)) {
+            var item = img[_i];
+            this.mapping[_i] = item;
+            assetManager.loadTexture(item);
           }
-        } catch (err) {
-          _iterator.e(err);
-        } finally {
-          _iterator.f();
         }
       }
 
-      var i = setInterval(function () {
-        if (_this2.assetManager.isLoadingComplete()) {
+      var onLoad = function onLoad() {
+        if (assetManager.isLoadingComplete()) {
           var _this2$props$onLoad, _this2$props;
 
-          clearInterval(i);
           (_this2$props$onLoad = (_this2$props = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props);
 
           _this2.playAnimation();
+        } else {
+          karas.inject.requestAnimationFrame(onLoad);
         }
-      }, 1000);
+      };
+
+      onLoad();
     }
   }, {
     key: "initRender",
@@ -23352,20 +23433,13 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       var _this3 = this;
 
       var fake = this.ref.fake;
-      fake.clearAnimate();
-      this.animation = fake.animate([{
-        backgroundColor: '#000'
-      }, {
-        backgroundColor: '#fff'
-      }], {
-        fps: this.props.fps || 60,
-        duration: 10000,
-        iterations: Infinity
+      fake.frameAnimate(function () {
+        fake.refresh();
       });
       var isRender,
           self = this;
 
-      fake.render = function (renderMode, lv, ctx) {
+      fake.render = function (renderMode, ctx, dx, dy) {
         var _this3$props$onFrame, _this3$props;
 
         if (!_this3.bounds) {
@@ -23380,36 +23454,30 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
         }
 
         var fitSize = _this3.props.fitSize;
-        var size = fake.getComputedStyle(['width', 'height']); // console.log(size)
-
         var x = _this3.bounds.offset.x;
         var y = _this3.bounds.offset.y;
         var width = _this3.bounds.size.x;
         var height = _this3.bounds.size.y;
         var centerX = x + width * 0.5;
-        var centerY = y + height * 0.5; // let matrix = mesh.matrixEvent;
-
+        var centerY = y + height * 0.5;
         _this3.currentTime = Date.now() / 1000;
         var delta = _this3.currentTime - _this3.lastTime;
-        _this3.lastTime = _this3.currentTime; // matrix4转matrix2_3
-        // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
-
-        ctx.translate(fake.sx, fake.sy);
+        _this3.lastTime = _this3.currentTime;
+        ctx.translate(fake.x + dx, fake.y + dy);
         var scale = 1;
 
         if (fitSize) {
-          var scx = width / size.width;
-          var scy = height / size.height;
+          var scx = width / fake.width;
+          var scy = height / fake.height;
           scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
 
           if (scale !== 1) {
             ctx.scale(1 / scale, 1 / scale);
-          } // console.log(scale, size)
-
+          }
         }
 
         ctx.translate(-centerX, -centerY);
-        ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
+        ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);
 
         if (!_this3.renderer) {
           _this3.initRender(ctx);
@@ -23454,14 +23522,31 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
-      var _this$props$onStart,
-          _this$props,
-          _this4 = this;
+      var _this4 = this,
+          _this$props$onStart,
+          _this$props;
 
-      if (skin === undefined) skin = "default";
+      if (skin === undefined || skin === null) {
+        skin = 'default';
+      }
+
+      var mapping = this.mapping;
       var assetManager = this.assetManager;
       var atlas = new TextureAtlas(assetManager.get(this.props.atlas), function (path) {
-        return assetManager.get(path);
+        var res = assetManager.get(path); // 找不到资源，atlas中图片名不对应
+
+        if (!res) {
+          // 只有1个，可以无视，直接对上
+          if (!mapping) {
+            res = assetManager.get(_this4.props.image);
+          } // 多个的话，传入的是个对象，自带映射关系
+          else {
+            var url = mapping[path];
+            res = assetManager.get(url);
+          }
+        }
+
+        return res;
       });
       var atlasLoader = new AtlasAttachmentLoader(atlas);
       var skeletonJson = new SkeletonJson(atlasLoader);
@@ -23470,6 +23555,11 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       skeleton.scaleY = -1;
       var bounds = calculateBounds(skeleton);
       skeleton.setSkinByName(skin);
+
+      if (!initialAnimation) {
+        initialAnimation = skeletonData.animations[0].name;
+      }
+
       var animationState = new AnimationState(new AnimationStateData(skeleton.data));
       animationState.setAnimation(0, initialAnimation, 0);
       (_this$props$onStart = (_this$props = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props, initialAnimation, this.loopCount);
@@ -23499,28 +23589,16 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "render",
     value: function render() {
-      return karas.parse({
-        tagName: 'div',
-        props: {
-          style: _objectSpread2({}, this.props.style || {}),
-          ref: "mesh"
-        },
-        children: [{
-          tagName: '$polygon',
-          props: {
-            ref: "fake",
-            style: {
-              width: '100%',
-              height: '100%'
-            }
-          }
-        }]
-      }); // return <div ref="mesh" style={this.props.style || {}}>
-      //   <$polyline ref="fake" style={{
-      //     width: '100%',
-      //     height: '100%',
-      //   }} />
-      // </div>;;
+      return karas.createElement("div", {
+        ref: "mesh",
+        style: this.props.style || {}
+      }, karas.createElement($, {
+        ref: "fake",
+        style: {
+          width: '100%',
+          height: '100%'
+        }
+      }));
     }
   }]);
 
@@ -23539,7 +23617,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.2.2";
+var version = "0.3.2";
 
-export { Spine38Canvas, Spine38WebGL, version };
+export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map

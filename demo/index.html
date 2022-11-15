@@ -12,41 +12,34 @@
 <pre><code class="brush:csx"></code></pre>
 <script type="text/jsx">
   let root = karas.render(
-    <canvas width="800" height="800">
-      <Spine ref="spine"
+    <webgl width="800" height="800">
+      <Spine.Spine38Webgl ref="spine"
         style={{
-          margin: '100 0 0 100',
+          margin: '50 0 0 50',
           width: 300,
           height: 300,
-          background: '#F00',
+          background: '#FFF',
           rotate: 30,
-          scale: 1
+          scale: 1.5,
+          translateX: 50,
         }}
-        triangle={true}
-        debug={true}
-        fitSize="true"
-        onEnd={(a)=>{console.log(a, 'end')}}
-        onStart={(a)=>{console.log(a, 'start')}}
-        onLoop={(a, l)=>{console.log(a, l, 'loop')}}
-        atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
-        image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
-        json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
-    </canvas>,
+        fitSize={true}
+        debug={false}
+        premultipliedAlpha={true}
+        atlas="spineboy-pro.atlas"
+        image="spineboy-pro.png"
+        json="spineboy-pro.json"/>
+    </webgl>,
     '#test'
   );
 
   let spine = root.ref.spine;
-  console.log(spine);
   // spine.playAnimation('run');
-  // spine.playAnimation('death', 1);
-
-
-  
 </script>
 <script src="./homunculus.js"></script>
 <script src="./yurine.js"></script>
 <script src="./sea.js"></script>
-<script src="./karas.js"></script>
+<script src="https://gw.alipayobjects.com/os/lib/karas/0.82.5/index.min.js"></script>
 <script src="../index.js"></script>
 <script>
   seajs.config({

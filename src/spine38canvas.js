@@ -11,12 +11,29 @@ import karas from 'karas';
 // import { AnimationStateData } from './spine-core/AnimationStateData';
 import SpineCanvas from './spine-canvas';
 
-const { TextureAtlas, AtlasAttachmentLoader, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData } = SpineCanvas;
+const {
+  TextureAtlas,
+  AtlasAttachmentLoader,
+  SkeletonJson,
+  Skeleton,
+  Vector2,
+  AnimationState,
+  AnimationStateData
+} = SpineCanvas;
 const { SkeletonRenderer, AssetManager } = SpineCanvas.canvas;
-
 
 // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 const GlobalSpineRendererMap = new WeakMap();
+
+class $ extends karas.Geom {
+  calContent(currentStyle, computedStyle) {
+    let res = super.calContent(currentStyle, computedStyle);
+    if(res) {
+      return res;
+    }
+    return true;
+  }
+}
 
 /**
  * props参数介绍：
@@ -41,18 +58,16 @@ export default class Spine38Canvas extends karas.Component {
   lastTime = Date.now();
   currentTime = Date.now();
 
+  mapping = null;
+
   constructor(props) {
     super(props);
 
-    this.animationName = props.animation || 'idle';
+    this.animationName = props.animation;
     this.skinName = props.skin || 'default';
     this.loopCount = props.loopCount || Infinity;
     // 一开始就先加载资源
     this.load();
-  }
-
-  shouldComponentUpdate() {
-    return false;
   }
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
@@ -69,30 +84,47 @@ export default class Spine38Canvas extends karas.Component {
   }
 
   load() {
-    this.assetManager = new AssetManager();
-    this.assetManager.loadText(this.props.atlas);
-    this.assetManager.loadText(this.props.json);
-    if (typeof this.props.image === 'string') {
-      this.assetManager.loadTexture(this.props.image);
-    } else {
-      for (let item of this.props.image) {
-        this.assetManager.loadTexture(item);
+    let assetManager = this.assetManager = new AssetManager();
+    assetManager.loadText(this.props.atlas);
+    assetManager.loadText(this.props.json);
+    let img = this.props.image;
+    if(typeof img === 'string') {
+      assetManager.loadTexture(img);
+    }
+    // 多个
+    else if(Array.isArray(img)) {
+      for(let i = 0, len = img.length; i < len; i++) {
+        assetManager.loadTexture(img[i]);
+      }
+    }
+    // 多个且需要映射关系
+    else {
+      this.mapping = {};
+      for(let i in img) {
+        if(img.hasOwnProperty(i)) {
+          let item = img[i];
+          this.mapping[i] = item;
+          assetManager.loadTexture(item);
+        }
       }
     }
 
-    let i = setInterval(() => {
-      if (this.assetManager.isLoadingComplete()) {
-        clearInterval(i);
+    let onLoad = () => {
+      if(assetManager.isLoadingComplete()) {
         this.props.onLoad?.();
         this.playAnimation();
       }
-    }, 1000);
+      else {
+        karas.inject.requestAnimationFrame(onLoad);
+      }
+    }
+    onLoad();
   }
 
   initRender(ctx) {
     this.ctx = ctx;
     this.renderer = GlobalSpineRendererMap.get(this.ctx);
-    if (!this.renderer) {
+    if(!this.renderer) {
       this.renderer = new SkeletonRenderer(ctx);
       this.renderer.triangleRendering = true;
       GlobalSpineRendererMap.set(this.ctx, this.renderer);
@@ -101,25 +133,15 @@ export default class Spine38Canvas extends karas.Component {
 
   componentDidMount() {
     let fake = this.ref.fake;
-    fake.clearAnimate();
 
-    this.animation = fake.animate([
-      {
-        backgroundColor: '#000',
-      },
-      {
-        backgroundColor: '#fff',
-      },
-    ], {
-      fps: this.props.fps || 60,
-      duration: 10000,
-      iterations: Infinity,
+    fake.frameAnimate(() => {
+      fake.refresh();
     });
 
     let isRender, self = this;
 
-    fake.render = (renderMode, lv, ctx) => {
-      if (!this.bounds) {
+    fake.render = (renderMode, ctx, dx, dy) => {
+      if(!this.bounds) {
         return
       }
       if(!isRender) {
@@ -127,44 +149,37 @@ export default class Spine38Canvas extends karas.Component {
         self.props.onRender?.();
       }
       let fitSize = this.props.fitSize;
-      let size = fake.getComputedStyle(['width', 'height']);
-      // console.log(size)
       let x = this.bounds.offset.x;
       let y = this.bounds.offset.y;
       let width = this.bounds.size.x;
       let height = this.bounds.size.y;
       let centerX = x + width * 0.5;
       let centerY = y + height * 0.5;
-      // let matrix = mesh.matrixEvent;
       this.currentTime = Date.now() / 1000;
 
       let delta = this.currentTime - this.lastTime;
       this.lastTime = this.currentTime;
-      // matrix4转matrix2_3
-      // ctx.setTransform(matrix[0], matrix[1], matrix[4], matrix[5], matrix[12] + (this.bounds?.size.x || 0) * matrix[0], matrix[13] + (this.bounds?.size.y || 0) * matrix[5]);
-      ctx.translate(fake.sx, fake.sy);
+      ctx.translate(fake.x + dx, fake.y + dy);
       let scale = 1;
-      if (fitSize) {
-        let scx = width / size.width;
-        let scy = height / size.height;
+      if(fitSize) {
+        let scx = width / fake.width;
+        let scy = height / fake.height;
         scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-        if (scale !== 1) {
+        if(scale !== 1) {
           ctx.scale(1 / scale, 1 / scale);
         }
-
-        // console.log(scale, size)
       }
       ctx.translate(-centerX, -centerY);
-      ctx.translate(size.width * 0.5 * scale, size.height * 0.5 * scale);
+      ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);
 
-      if (!this.renderer) {
+      if(!this.renderer) {
         this.initRender(ctx);
       }
-      if (this.isParsed) {
-        if (this.props.debug) {
+      if(this.isParsed) {
+        if(this.props.debug) {
           this.renderer.debugRendering = true;
         }
-        if (this.props.triangle) {
+        if(this.props.triangle) {
           this.renderer.triangleRendering = true;
         }
         this.state.update(delta);
@@ -187,23 +202,41 @@ export default class Spine38Canvas extends karas.Component {
   }
 
   loadSkeleton(initialAnimation, skin) {
-    if (skin === undefined) skin = "default";
+    if(skin === undefined || skin === null) {
+      skin = 'default';
+    }
+    let mapping = this.mapping;
     let assetManager = this.assetManager;
     let atlas = new TextureAtlas(assetManager.get(this.props.atlas), (path) => {
-      return assetManager.get(path);
+      let res = assetManager.get(path);
+      // 找不到资源，atlas中图片名不对应
+      if(!res) {
+        // 只有1个，可以无视，直接对上
+        if(!mapping) {
+          res = assetManager.get(this.props.image);
+        }
+        // 多个的话，传入的是个对象，自带映射关系
+        else {
+          let url = mapping[path];
+          res = assetManager.get(url);
+        }
+      }
+      return res;
     });
 
     let atlasLoader = new AtlasAttachmentLoader(atlas);
-    var skeletonJson = new SkeletonJson(atlasLoader);
+    let skeletonJson = new SkeletonJson(atlasLoader);
 
-    var skeletonData = skeletonJson.readSkeletonData(assetManager.get(this.props.json));
-    var skeleton = new Skeleton(skeletonData);
+    let skeletonData = skeletonJson.readSkeletonData(assetManager.get(this.props.json));
+    let skeleton = new Skeleton(skeletonData);
     skeleton.scaleY = -1;
-    var bounds = calculateBounds(skeleton);
+    let bounds = calculateBounds(skeleton);
     skeleton.setSkinByName(skin);
+    if(!initialAnimation) {
+      initialAnimation = skeletonData.animations[0].name;
+    }
 
-
-    var animationState = new AnimationState(new AnimationStateData(skeleton.data));
+    let animationState = new AnimationState(new AnimationStateData(skeleton.data));
     animationState.setAnimation(0, initialAnimation, 0);
     this.props.onStart?.(initialAnimation, this.loopCount);
     animationState.addListener({
@@ -211,9 +244,10 @@ export default class Spine38Canvas extends karas.Component {
         this.loopCount--;
         this.props.onLoop?.(initialAnimation, this.loopCount);
 
-        if (this.loopCount > 0) {
+        if(this.loopCount > 0) {
           animationState.setAnimation(0, initialAnimation, 0);
-        } else {
+        }
+        else {
           this.props.onEnd?.(initialAnimation);
           animationState.setAnimation(0, this.props.animation, 0);
         }
@@ -224,42 +258,21 @@ export default class Spine38Canvas extends karas.Component {
   }
 
   render() {
-    return karas.parse({
-      tagName: 'div',
-      props: {
-        style: {
-          ...(this.props.style || {})
-        },
-        ref: "mesh"
-      },
-      children: [
-        {
-          tagName: '$polygon',
-          props: {
-            ref: "fake",
-            style: {
-              width: '100%',
-              height: '100%',
-            }
-          }
-        }
-      ]
-    });
-    // return <div ref="mesh" style={this.props.style || {}}>
-    //   <$polyline ref="fake" style={{
-    //     width: '100%',
-    //     height: '100%',
-    //   }} />
-    // </div>;;
+    return <div ref="mesh" style={this.props.style || {}}>
+      <$ ref="fake" style={{
+        width: '100%',
+        height: '100%',
+      }}/>
+    </div>;
   }
 }
 
 function calculateBounds(skeleton) {
   skeleton.setToSetupPose();
   skeleton.updateWorldTransform();
-  var offset = new Vector2();
-  var size = new Vector2();
+  let offset = new Vector2();
+  let size = new Vector2();
   skeleton.getBounds(offset, size, []);
-  return { offset: offset, size: size };
+  return { offset, size };
 }
 
