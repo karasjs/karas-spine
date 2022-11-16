@@ -161,13 +161,11 @@ export default class Spine38Canvas extends karas.Component {
       this.lastTime = this.currentTime;
       ctx.translate(fake.x + dx, fake.y + dy);
       let scale = 1;
-      if(fitSize) {
-        let scx = width / fake.width;
-        let scy = height / fake.height;
-        scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-        if(scale !== 1) {
-          ctx.scale(1 / scale, 1 / scale);
-        }
+      let scx = width / fake.width;
+      let scy = height / fake.height;
+      scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+      if(scale !== 1) {
+        ctx.scale(1 / scale, 1 / scale);
       }
       ctx.translate(-centerX, -centerY);
       ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);

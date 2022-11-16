@@ -13177,35 +13177,31 @@
               }
 
               var fitSize = _this3.props.fitSize;
-              {
-                var scx = width / fake.width;
-                var scy = height / fake.height;
-                var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+              var scx = width / fake.width;
+              var scy = height / fake.height;
+              var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
 
-                if (scale !== 1) {
-                  // 对齐中心点后缩放
-                  var _tfo = [centerX / CX, centerY / CY];
+              if (scale !== 1) {
+                // 对齐中心点后缩放
+                var _tfo = [centerX / CX, centerY / CY];
 
-                  _this3.mvp.translate(_tfo[0], _tfo[1], 0);
+                _this3.mvp.translate(_tfo[0], _tfo[1], 0);
 
-                  var _m = karas__default["default"].math.matrix.identity();
+                var _m = karas__default["default"].math.matrix.identity();
 
-                  _m[0] = 1 / scale;
-                  _m[5] = 1 / scale;
+                _m[0] = 1 / scale;
+                _m[5] = 1 / scale;
 
-                  _this3.mvp.multiply({
-                    values: _m
-                  });
+                _this3.mvp.multiply({
+                  values: _m
+                });
 
-                  _this3.mvp.translate(-_tfo[0] / scale, -_tfo[1] / scale, 0);
-                }
-              }
-
-              _this3.mvp.translate(tfo[0], tfo[1], 0); // 还原位置，先对齐中心点，再校正
+                _this3.mvp.translate(-_tfo[0] / scale, -_tfo[1] / scale, 0);
+              } // 还原位置，先对齐中心点，再校正
 
 
-              var x0 = fake.x + fake.width * 0.5;
-              var y0 = fake.y + fake.height * 0.5;
+              var x0 = fake.x + dx + fake.width * 0.5;
+              var y0 = fake.y + dy + fake.height * 0.5;
               var p1 = calPoint({
                 x: centerX,
                 y: centerY
@@ -23473,15 +23469,12 @@
           _this3.lastTime = _this3.currentTime;
           ctx.translate(fake.x + dx, fake.y + dy);
           var scale = 1;
+          var scx = width / fake.width;
+          var scy = height / fake.height;
+          scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
 
-          if (fitSize) {
-            var scx = width / fake.width;
-            var scy = height / fake.height;
-            scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-
-            if (scale !== 1) {
-              ctx.scale(1 / scale, 1 / scale);
-            }
+          if (scale !== 1) {
+            ctx.scale(1 / scale, 1 / scale);
           }
 
           ctx.translate(-centerX, -centerY);

@@ -232,25 +232,22 @@ export default class Spine38WebGL extends karas.Component {
           }
 
           let fitSize = this.props.fitSize;
-          {
-            let scx = width / fake.width;
-            let scy = height / fake.height;
-            let scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-            if(scale !== 1) {
-              // 对齐中心点后缩放
-              let tfo = [centerX / CX, centerY / CY];
-              this.mvp.translate(tfo[0], tfo[1], 0);
-              let m = karas.math.matrix.identity();
-              m[0] = 1 / scale;
-              m[5] = 1 / scale;
-              this.mvp.multiply({ values: m });
-              this.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
-            }
+          let scx = width / fake.width;
+          let scy = height / fake.height;
+          let scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+          if(scale !== 1) {
+            // 对齐中心点后缩放
+            let tfo = [centerX / CX, centerY / CY];
+            this.mvp.translate(tfo[0], tfo[1], 0);
+            let m = karas.math.matrix.identity();
+            m[0] = 1 / scale;
+            m[5] = 1 / scale;
+            this.mvp.multiply({ values: m });
+            this.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
           }
-          this.mvp.translate(tfo[0], tfo[1], 0);
           // 还原位置，先对齐中心点，再校正
-          let x0 = fake.x + fake.width * 0.5;
-          let y0 = fake.y + fake.height * 0.5;
+          let x0 = fake.x + dx + fake.width * 0.5;
+          let y0 = fake.y + dy + fake.height * 0.5;
           let p1 = calPoint({ x: centerX, y: centerY }, this.mvp.values);
           let p = calPoint({ x: x0, y: y0 }, pm);
           this.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
