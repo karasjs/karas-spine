@@ -13154,7 +13154,7 @@
                 while (node) {
                   var computedStyle = node.computedStyle; // 有透视则退出，直接应用透视
 
-                  if (computedStyle[PERSPECTIVE] || node.__selfPerspectiveMatrix) {
+                  if (computedStyle[PERSPECTIVE] || node.__selfPerspective) {
                     isPpt = true;
                     break;
                   }
@@ -23630,7 +23630,7 @@
     };
   }
 
-  var version = "0.3.2";
+  var version = "0.3.3";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

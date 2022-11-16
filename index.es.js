@@ -13146,7 +13146,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
               while (node) {
                 var computedStyle = node.computedStyle; // 有透视则退出，直接应用透视
 
-                if (computedStyle[PERSPECTIVE] || node.__selfPerspectiveMatrix) {
+                if (computedStyle[PERSPECTIVE] || node.__selfPerspective) {
                   isPpt = true;
                   break;
                 }
@@ -23622,7 +23622,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.3.2";
+var version = "0.3.3";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map

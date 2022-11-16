@@ -220,7 +220,7 @@ export default class Spine38WebGL extends karas.Component {
             while(node) {
               let computedStyle = node.computedStyle;
               // 有透视则退出，直接应用透视
-              if(computedStyle[PERSPECTIVE] || node.__selfPerspectiveMatrix) {
+              if(computedStyle[PERSPECTIVE] || node.__selfPerspective) {
                 isPpt = true;
                 break;
               }
