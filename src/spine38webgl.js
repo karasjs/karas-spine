@@ -26,6 +26,7 @@ const {
     STYLE_KEY: {
       TRANSFORM,
       TRANSFORM_ORIGIN,
+      PERSPECTIVE,
     },
   },
   style: {
@@ -145,7 +146,6 @@ export default class Spine38WebGL extends karas.Component {
     if(!this.renderer) {
       this.renderer = new SkeletonRenderer(ctx);
       this.shader = Shader.newTwoColoredTextured(ctx);
-      this.mvp.ortho2d(0, 0, ctx.canvas.width, ctx.canvas.height);
 
       this.batcher = new PolygonBatcher(ctx);
       this.assetManager = new AssetManager(ctx, undefined, false, unit);
@@ -210,13 +210,20 @@ export default class Spine38WebGL extends karas.Component {
 
         let pm = fake.matrixEvent;
         if(lastPm && equalArr(pm, lastPm)) {
-          assignMatrix(this.mvp.values, lastMatrix);
+          lastMatrix && assignMatrix(this.mvp.values, lastMatrix);
         }
         else {
+          let isPpt = false;
           // 先以骨骼原本的中心点为基准，应用节点的matrix
           if(!isE(pm)) {
             let m = identity(), node = fake;
             while(node) {
+              let computedStyle = node.computedStyle;
+              // 有透视则退出，直接应用透视
+              if(computedStyle[PERSPECTIVE] || node.__selfPerspectiveMatrix) {
+                isPpt = true;
+                break;
+              }
               let t = calWebglMatrix(node, CX, CY);
               if(t) {
                 m = multiply(t, m);
@@ -224,18 +231,20 @@ export default class Spine38WebGL extends karas.Component {
               node = node.domParent;
             }
             // root左上原点对齐中心，上下翻转y
-            this.mvp.translate(tfo[0], tfo[1], 0);
-            m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
-            this.mvp.multiplyLeft({ values: m });
-            this.mvp.multiply({ values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] });
-            this.mvp.translate(-tfo[0], -tfo[1], 0);
+            if(!isPpt) {
+              this.mvp.translate(tfo[0], tfo[1], 0);
+              m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
+              this.mvp.multiplyLeft({ values: m });
+              this.mvp.multiply({ values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] });
+              this.mvp.translate(-tfo[0], -tfo[1], 0);
+            }
           }
 
           let fitSize = this.props.fitSize;
           let scx = width / fake.width;
           let scy = height / fake.height;
           let scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-          if(scale !== 1) {
+          if(scale !== 1 && !isPpt) {
             // 对齐中心点后缩放
             let tfo = [centerX / CX, centerY / CY];
             this.mvp.translate(tfo[0], tfo[1], 0);
@@ -246,12 +255,14 @@ export default class Spine38WebGL extends karas.Component {
             this.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
           }
           // 还原位置，先对齐中心点，再校正
-          let x0 = fake.x + dx + fake.width * 0.5;
-          let y0 = fake.y + dy + fake.height * 0.5;
-          let p1 = calPoint({ x: centerX, y: centerY }, this.mvp.values);
-          let p = calPoint({ x: x0, y: y0 }, pm);
-          this.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
-          this.mvp.translate(-p1.x, -p1.y, 0);
+          if(!isPpt) {
+            let x0 = fake.x + dx + fake.width * 0.5;
+            let y0 = fake.y + dy + fake.height * 0.5;
+            let p1 = calPoint({ x: centerX, y: centerY }, this.mvp.values);
+            let p = calPoint({ x: x0, y: y0 }, pm);
+            this.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
+            this.mvp.translate(-p1.x, -p1.y, 0);
+          }
           lastMatrix = this.mvp.values.slice(0);
         }
         lastPm = pm.slice(0);

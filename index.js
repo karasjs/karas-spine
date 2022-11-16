@@ -12918,6 +12918,7 @@
       _karas$enums$STYLE_KE = karas__default["default"].enums.STYLE_KEY,
       TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
       TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
+      PERSPECTIVE = _karas$enums$STYLE_KE.PERSPECTIVE,
       calMatrixByOrigin = karas__default["default"].style.transform.calMatrixByOrigin,
       _karas$util = karas__default["default"].util,
       equalArr = _karas$util.equalArr,
@@ -13068,7 +13069,6 @@
         if (!this.renderer) {
           this.renderer = new SkeletonRenderer$1(ctx);
           this.shader = Shader.newTwoColoredTextured(ctx);
-          this.mvp.ortho2d(0, 0, ctx.canvas.width, ctx.canvas.height);
           this.batcher = new PolygonBatcher(ctx);
           this.assetManager = new AssetManager$1(ctx, undefined, false, unit);
           this.load();
@@ -13143,14 +13143,22 @@
             var pm = fake.matrixEvent;
 
             if (lastPm && equalArr(pm, lastPm)) {
-              assignMatrix(_this3.mvp.values, lastMatrix);
+              lastMatrix && assignMatrix(_this3.mvp.values, lastMatrix);
             } else {
-              // 先以骨骼原本的中心点为基准，应用节点的matrix
+              var isPpt = false; // 先以骨骼原本的中心点为基准，应用节点的matrix
+
               if (!isE(pm)) {
                 var m = identity(),
                     node = fake;
 
                 while (node) {
+                  var computedStyle = node.computedStyle; // 有透视则退出，直接应用透视
+
+                  if (computedStyle[PERSPECTIVE] || node.__selfPerspectiveMatrix) {
+                    isPpt = true;
+                    break;
+                  }
+
                   var t = calWebglMatrix(node, CX, CY);
 
                   if (t) {
@@ -13161,19 +13169,21 @@
                 } // root左上原点对齐中心，上下翻转y
 
 
-                _this3.mvp.translate(tfo[0], tfo[1], 0);
+                if (!isPpt) {
+                  _this3.mvp.translate(tfo[0], tfo[1], 0);
 
-                m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
+                  m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
 
-                _this3.mvp.multiplyLeft({
-                  values: m
-                });
+                  _this3.mvp.multiplyLeft({
+                    values: m
+                  });
 
-                _this3.mvp.multiply({
-                  values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
-                });
+                  _this3.mvp.multiply({
+                    values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+                  });
 
-                _this3.mvp.translate(-tfo[0], -tfo[1], 0);
+                  _this3.mvp.translate(-tfo[0], -tfo[1], 0);
+                }
               }
 
               var fitSize = _this3.props.fitSize;
@@ -13181,7 +13191,7 @@
               var scy = height / fake.height;
               var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
 
-              if (scale !== 1) {
+              if (scale !== 1 && !isPpt) {
                 // 对齐中心点后缩放
                 var _tfo = [centerX / CX, centerY / CY];
 
@@ -13200,20 +13210,22 @@
               } // 还原位置，先对齐中心点，再校正
 
 
-              var x0 = fake.x + dx + fake.width * 0.5;
-              var y0 = fake.y + dy + fake.height * 0.5;
-              var p1 = calPoint({
-                x: centerX,
-                y: centerY
-              }, _this3.mvp.values);
-              var p = calPoint({
-                x: x0,
-                y: y0
-              }, pm);
+              if (!isPpt) {
+                var x0 = fake.x + dx + fake.width * 0.5;
+                var y0 = fake.y + dy + fake.height * 0.5;
+                var p1 = calPoint({
+                  x: centerX,
+                  y: centerY
+                }, _this3.mvp.values);
+                var p = calPoint({
+                  x: x0,
+                  y: y0
+                }, pm);
 
-              _this3.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
+                _this3.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
 
-              _this3.mvp.translate(-p1.x, -p1.y, 0);
+                _this3.mvp.translate(-p1.x, -p1.y, 0);
+              }
 
               lastMatrix = _this3.mvp.values.slice(0);
             }
