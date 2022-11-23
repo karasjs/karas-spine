@@ -13148,10 +13148,13 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
 
       if (!this.renderer) {
         this.renderer = new SkeletonRenderer$1(ctx);
+        GlobalSpineRendererMap$1.set(ctx, this.renderer);
+      }
+
+      if (!this.shader) {
         this.shader = Shader.newTwoColoredTextured(ctx);
         this.batcher = new PolygonBatcher(ctx);
         this.assetManager = new AssetManager$1(ctx, undefined, false, 0);
-        GlobalSpineRendererMap$1.set(ctx, this.renderer);
       }
 
       fake.renderer = this.renderer;
@@ -23599,7 +23602,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.3.5";
+var version = "0.3.6";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map

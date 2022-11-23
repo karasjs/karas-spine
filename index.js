@@ -13156,10 +13156,13 @@
 
         if (!this.renderer) {
           this.renderer = new SkeletonRenderer$1(ctx);
+          GlobalSpineRendererMap$1.set(ctx, this.renderer);
+        }
+
+        if (!this.shader) {
           this.shader = Shader.newTwoColoredTextured(ctx);
           this.batcher = new PolygonBatcher(ctx);
           this.assetManager = new AssetManager$1(ctx, undefined, false, 0);
-          GlobalSpineRendererMap$1.set(ctx, this.renderer);
         }
 
         fake.renderer = this.renderer;
@@ -23607,7 +23610,7 @@
     };
   }
 
-  var version = "0.3.5";
+  var version = "0.3.6";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

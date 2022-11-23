@@ -216,12 +216,12 @@ export default class Spine38WebGL extends karas.Component {
     this.renderer = GlobalSpineRendererMap.get(ctx);
     if(!this.renderer) {
       this.renderer = new SkeletonRenderer(ctx);
+      GlobalSpineRendererMap.set(ctx, this.renderer);
+    }
+    if(!this.shader) {
       this.shader = Shader.newTwoColoredTextured(ctx);
-
       this.batcher = new PolygonBatcher(ctx);
       this.assetManager = new AssetManager(ctx, undefined, false, 0);
-
-      GlobalSpineRendererMap.set(ctx, this.renderer);
     }
     fake.renderer = this.renderer;
     fake.shader = this.shader;
