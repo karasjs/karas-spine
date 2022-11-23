@@ -25,7 +25,6 @@ const {
     STYLE_KEY: {
       TRANSFORM,
       TRANSFORM_ORIGIN,
-      PERSPECTIVE,
     },
   },
   style: {
@@ -153,7 +152,7 @@ class $ extends karas.Geom {
 
 function calWebglMatrix(node, cx, cy, dx, dy) {
   let { __x1: x, __y1: y } = node;
-  let currentStyle = node.__currentStyle, computedStyle = node.__computedStyle;
+  let computedStyle = node.__computedStyle;
   let matrix = computedStyle[TRANSFORM];
   if(matrix && !isE(matrix)) {
     let tfo = computedStyle[TRANSFORM_ORIGIN];
@@ -272,7 +271,7 @@ export default class Spine38WebGL extends karas.Component {
     let fake = this.ref.fake;
     fake.frameAnimate(() => {
       if(this.isPlay) {
-        // fake.refresh();
+        fake.refresh();
       }
     });
   }

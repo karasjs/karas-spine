@@ -12915,9 +12915,8 @@
       WEBGL = karas__default["default"].mode.WEBGL,
       _karas$enums$STYLE_KE = karas__default["default"].enums.STYLE_KEY,
       TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
-      TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN;
-      _karas$enums$STYLE_KE.PERSPECTIVE;
-      var calMatrixByOrigin = karas__default["default"].style.transform.calMatrixByOrigin,
+      TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
+      calMatrixByOrigin = karas__default["default"].style.transform.calMatrixByOrigin,
       _karas$util = karas__default["default"].util,
       equalArr = _karas$util.equalArr,
       assignMatrix = _karas$util.assignMatrix;
@@ -13073,8 +13072,7 @@
   function calWebglMatrix(node, cx, cy, dx, dy) {
     var x = node.__x1,
         y = node.__y1;
-    node.__currentStyle;
-        var computedStyle = node.__computedStyle;
+    var computedStyle = node.__computedStyle;
     var matrix = computedStyle[TRANSFORM];
 
     if (matrix && !isE(matrix)) {
@@ -13216,7 +13214,9 @@
         this.load(this.root.ctx);
         var fake = this.ref.fake;
         fake.frameAnimate(function () {
-          if (_this3.isPlay) ;
+          if (_this3.isPlay) {
+            fake.refresh();
+          }
         });
       }
     }, {
@@ -23607,7 +23607,7 @@
     };
   }
 
-  var version = "0.3.4";
+  var version = "0.3.5";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

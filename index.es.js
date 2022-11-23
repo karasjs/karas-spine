@@ -12907,9 +12907,8 @@ var _karas$math$matrix = karas.math.matrix,
     WEBGL = karas.mode.WEBGL,
     _karas$enums$STYLE_KE = karas.enums.STYLE_KEY,
     TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
-    TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN;
-    _karas$enums$STYLE_KE.PERSPECTIVE;
-    var calMatrixByOrigin = karas.style.transform.calMatrixByOrigin,
+    TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
+    calMatrixByOrigin = karas.style.transform.calMatrixByOrigin,
     _karas$util = karas.util,
     equalArr = _karas$util.equalArr,
     assignMatrix = _karas$util.assignMatrix;
@@ -13065,8 +13064,7 @@ var $$1 = /*#__PURE__*/function (_karas$Geom) {
 function calWebglMatrix(node, cx, cy, dx, dy) {
   var x = node.__x1,
       y = node.__y1;
-  node.__currentStyle;
-      var computedStyle = node.__computedStyle;
+  var computedStyle = node.__computedStyle;
   var matrix = computedStyle[TRANSFORM];
 
   if (matrix && !isE(matrix)) {
@@ -13208,7 +13206,9 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       this.load(this.root.ctx);
       var fake = this.ref.fake;
       fake.frameAnimate(function () {
-        if (_this3.isPlay) ;
+        if (_this3.isPlay) {
+          fake.refresh();
+        }
       });
     }
   }, {
@@ -23599,7 +23599,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.3.4";
+var version = "0.3.5";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map
