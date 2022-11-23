@@ -19,7 +19,6 @@ const {
     },
   },
   mode: {
-    CANVAS,
     WEBGL,
   },
   enums: {
@@ -41,17 +40,124 @@ const {
 } = karas;
 
 class $ extends karas.Geom {
-  render() {
+  resize(ctx, env) {
+    let bounds = this.bounds;
+
+    // magic
+    let centerX = bounds.offset.x + bounds.size.x / 2;
+    let centerY = bounds.offset.y + bounds.size.y / 2;
+    let width = env.width, height = env.height;
+
+    this.mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
+  }
+  render(renderMode, ctx, dx, dy) {
+    if(renderMode === WEBGL) {
+      if(!this.bounds) {
+        return;
+      }
+      let env = this.env;
+      let CX = env.width * 0.5, CY = env.height * 0.5;
+      this.resize(ctx, env);
+
+      this.currentTime = Date.now() * 0.001;
+      let delta = this.currentTime - this.lastTime;
+      if(this.playbackRate && this.playbackRate !== 1) {
+        delta *= this.playbackRate;
+      }
+      this.lastTime = this.currentTime;
+
+      let bounds = this.bounds;
+      let size = bounds.size, offset = bounds.offset;
+      let x = offset.x;
+      let y = offset.y;
+      let width = size.x;
+      let height = size.y;
+      let centerX = x + width * 0.5;
+      let centerY = y + height * 0.5;
+      let tfo = [centerX / CX, centerY / CY];
+
+      let pm = this.matrixEvent, lastPm = this.lastPm;
+      if(lastPm && equalArr(pm, lastPm)) {
+        this.lastMatrix && assignMatrix(this.mvp.values, this.lastMatrix);
+      }
+      else {
+        // 先以骨骼原本的中心点为基准，应用节点的matrix，如果是局部缓存，则为E
+        if(!isE(pm) && env.node !== this.__domParent) {
+          let m = identity(), node = this;
+          while(node) {
+            let t = calWebglMatrix(node, CX, CY, dx, dy);
+            if(t) {
+              m = multiply(t, m);
+            }
+            node = node.__domParent;
+            // 局部根节点，或者root
+            if(node === env.node) {
+              break;
+            }
+          }
+          // root左上原点对齐中心，上下翻转y
+          this.mvp.translate(tfo[0], tfo[1], 0);
+          m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
+          this.mvp.multiplyLeft({ values: m });
+          this.mvp.multiply({ values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] });
+          this.mvp.translate(-tfo[0], -tfo[1], 0);
+        }
+
+        let fitSize = this.props.fitSize;
+        let scx = width / this.width;
+        let scy = height / this.height;
+        let scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+        if(scale !== 1) {
+          // 对齐中心点后缩放
+          let tfo = [centerX / CX, centerY / CY];
+          this.mvp.translate(tfo[0], tfo[1], 0);
+          let m = karas.math.matrix.identity();
+          m[0] = 1 / scale;
+          m[5] = 1 / scale;
+          this.mvp.multiply({ values: m });
+          this.mvp.translate((-tfo[0]) / scale, (-tfo[1]) / scale, 0);
+        }
+        // 还原位置，先对齐中心点，再校正
+        if(env.node !== this.__domParent) {
+          let x0 = this.x + dx + this.width * 0.5;
+          let y0 = this.y + dy + this.height * 0.5;
+          let p1 = calPoint({ x: centerX, y: centerY }, this.mvp.values);
+          let p = calPoint({ x: x0, y: y0 }, pm);
+          this.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
+          this.mvp.translate(-p1.x, -p1.y, 0);
+        }
+        this.lastMatrix = this.mvp.values.slice(0);
+      }
+      this.lastPm = pm.slice(0);
+
+      this.state.update(delta);
+      this.state.apply(this.skeleton);
+      this.skeleton.updateWorldTransform();
+
+      // Bind the shader and set the texture and model-view-projection matrix.
+      this.shader.bind();
+      this.shader.setUniformi(Shader.SAMPLER, 0);
+      this.shader.setUniform4x4f(Shader.MVP_MATRIX, this.mvp.values);
+
+      // Start the batch and tell the SkeletonRenderer to render the active skeleton.
+      this.batcher.begin(this.shader);
+      this.renderer.premultipliedAlpha = !!this.props.premultipliedAlpha;
+      this.renderer.draw(this.batcher, this.skeleton);
+      this.batcher.end();
+
+      this.shader.unbind();
+      this.props.onFrame?.();
+    }
   }
 }
 
-function calWebglMatrix(node, cx, cy) {
+function calWebglMatrix(node, cx, cy, dx, dy) {
   let { __x1: x, __y1: y } = node;
-  let currentStyle = node.currentStyle, computedStyle = node.computedStyle;
+  let currentStyle = node.__currentStyle, computedStyle = node.__computedStyle;
   let matrix = computedStyle[TRANSFORM];
   if(matrix && !isE(matrix)) {
-    let tfo = currentStyle[TRANSFORM_ORIGIN];
-    matrix = calMatrixByOrigin(matrix, (cx - x - tfo[0]) / cx, (cy - y - tfo[1]) / cy);
+    let tfo = computedStyle[TRANSFORM_ORIGIN];
+    matrix = calMatrixByOrigin(matrix, (cx - x - dx - tfo[0]) / cx, (cy - y - dy - tfo[1]) / cy);
   }
   return matrix;
 }
@@ -71,15 +177,11 @@ function calWebglMatrix(node, cx, cy) {
  * debugger
  */
 export default class Spine38WebGL extends karas.Component {
-
-  verticesData = [];
-  renderer = null;
-  isParsed = false;
-  lastTime = Date.now();
-  currentTime = Date.now();
   mvp = new Matrix4();
 
   mapping = null;
+  isPlay = false;
+  __playbackRate = 1;
 
   constructor(props) {
     super(props);
@@ -87,12 +189,12 @@ export default class Spine38WebGL extends karas.Component {
     this.animationName = props.animation;
     this.skinName = props.skin || 'default';
     this.loopCount = props.loopCount || Infinity;
+    this.isPlay = props.autoPlay !== false;
   }
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
     this.loopCount = loop;
     let data = this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
-
     this.state = data.state;
     this.skeleton = data.skeleton;
     this.bounds = data.bounds;
@@ -100,9 +202,33 @@ export default class Spine38WebGL extends karas.Component {
     this.lastTime = Date.now() / 1000;
     this.currentTime = Date.now() / 1000;
     this.animationsList = data.animations;
+
+    let fake = this.ref.fake;
+    fake.state = data.state;
+    fake.skeleton = data.skeleton;
+    fake.bounds = data.bounds;
+    fake.lastTime = Date.now() * 0.001;
+    // 第一帧强制显示
+    fake.refresh();
   }
 
-  load() {
+  load(ctx) {
+    let fake = this.ref.fake;
+    this.renderer = GlobalSpineRendererMap.get(ctx);
+    if(!this.renderer) {
+      this.renderer = new SkeletonRenderer(ctx);
+      this.shader = Shader.newTwoColoredTextured(ctx);
+
+      this.batcher = new PolygonBatcher(ctx);
+      this.assetManager = new AssetManager(ctx, undefined, false, 0);
+
+      GlobalSpineRendererMap.set(ctx, this.renderer);
+    }
+    fake.renderer = this.renderer;
+    fake.shader = this.shader;
+    fake.batcher = this.batcher;
+    fake.mvp = this.mvp;
+
     let assetManager = this.assetManager;
     let img = this.props.image;
     if(typeof img === 'string') {
@@ -140,159 +266,19 @@ export default class Spine38WebGL extends karas.Component {
     onLoad();
   }
 
-  initRender(ctx, unit) {
-    this.ctx = ctx;
-    this.renderer = GlobalSpineRendererMap.get(this.ctx);
-    if(!this.renderer) {
-      this.renderer = new SkeletonRenderer(ctx);
-      this.shader = Shader.newTwoColoredTextured(ctx);
-
-      this.batcher = new PolygonBatcher(ctx);
-      this.assetManager = new AssetManager(ctx, undefined, false, unit);
-      this.load();
-
-      GlobalSpineRendererMap.set(this.ctx, this.renderer);
-    }
-  }
-
-  resize(canvas, ctx) {
-    let bounds = this.bounds;
-
-    // magic
-    let centerX = bounds.offset.x + bounds.size.x / 2;
-    let centerY = bounds.offset.y + bounds.size.y / 2;
-    let width = canvas.width;
-    let height = canvas.height;
-
-    this.mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
-  }
-
   componentDidMount() {
+    this.load(this.root.ctx);
+
     let fake = this.ref.fake;
-
-    let count = 0;
     fake.frameAnimate(() => {
-      fake.refresh();
-    });
-
-    let isRender, self = this, lastPm, lastMatrix;
-
-    fake.render = (renderMode, ctx, dx, dy) => {
-      if(renderMode === WEBGL) {
-        if(!this.renderer) {
-          this.initRender(ctx, 0);
-        }
-        if(!this.bounds) {
-          return
-        }
-        if(!isRender) {
-          isRender = true;
-          self.props.onRender?.();
-        }
-        let canvas = ctx.canvas;
-        let W = canvas.width, H = canvas.height, CX = W * 0.5, CY = H * 0.5;
-        this.resize(canvas, ctx);
-
-        this.currentTime = Date.now() / 1000;
-
-        let delta = this.currentTime - this.lastTime;
-
-        this.lastTime = this.currentTime;
-        let bounds = this.bounds;
-        let size = bounds.size, offset = bounds.offset;
-        let x = offset.x;
-        let y = offset.y;
-        let width = size.x;
-        let height = size.y;
-        let centerX = x + width * 0.5;
-        let centerY = y + height * 0.5;
-        let tfo = [centerX / CX, centerY / CY];
-
-        let pm = fake.matrixEvent;
-        if(lastPm && equalArr(pm, lastPm)) {
-          lastMatrix && assignMatrix(this.mvp.values, lastMatrix);
-        }
-        else {
-          let isPpt = false;
-          // 先以骨骼原本的中心点为基准，应用节点的matrix
-          if(!isE(pm)) {
-            let m = identity(), node = fake;
-            while(node) {
-              let computedStyle = node.computedStyle;
-              // 有透视则退出，直接应用透视
-              if(computedStyle[PERSPECTIVE] || node.__selfPerspective) {
-                isPpt = true;
-                break;
-              }
-              let t = calWebglMatrix(node, CX, CY);
-              if(t) {
-                m = multiply(t, m);
-              }
-              node = node.domParent;
-            }
-            // root左上原点对齐中心，上下翻转y
-            if(!isPpt) {
-              this.mvp.translate(tfo[0], tfo[1], 0);
-              m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
-              this.mvp.multiplyLeft({ values: m });
-              this.mvp.multiply({ values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1] });
-              this.mvp.translate(-tfo[0], -tfo[1], 0);
-            }
-          }
-
-          let fitSize = this.props.fitSize;
-          let scx = width / fake.width;
-          let scy = height / fake.height;
-          let scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-          if(scale !== 1 && !isPpt) {
-            // 对齐中心点后缩放
-            let tfo = [centerX / CX, centerY / CY];
-            this.mvp.translate(tfo[0], tfo[1], 0);
-            let m = karas.math.matrix.identity();
-            m[0] = 1 / scale;
-            m[5] = 1 / scale;
-            this.mvp.multiply({ values: m });
-            this.mvp.translate(-tfo[0] / scale, -tfo[1] / scale, 0);
-          }
-          // 还原位置，先对齐中心点，再校正
-          if(!isPpt) {
-            let x0 = fake.x + dx + fake.width * 0.5;
-            let y0 = fake.y + dy + fake.height * 0.5;
-            let p1 = calPoint({ x: centerX, y: centerY }, this.mvp.values);
-            let p = calPoint({ x: x0, y: y0 }, pm);
-            this.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
-            this.mvp.translate(-p1.x, -p1.y, 0);
-          }
-          lastMatrix = this.mvp.values.slice(0);
-        }
-        lastPm = pm.slice(0);
-
-        this.state.update(delta);
-        this.state.apply(this.skeleton);
-        this.skeleton.updateWorldTransform();
-
-        // Bind the shader and set the texture and model-view-projection matrix.
-        this.shader.bind();
-        this.shader.setUniformi(Shader.SAMPLER, 0);
-        this.shader.setUniform4x4f(Shader.MVP_MATRIX, this.mvp.values);
-
-        // Start the batch and tell the SkeletonRenderer to render the active skeleton.
-        if(!this.batcher.isDrawing) {
-          this.batcher.begin(this.shader);
-        }
-
-        this.renderer.premultipliedAlpha = !!this.props.premultipliedAlpha;
-        this.renderer.draw(this.batcher, this.skeleton);
-        // this.batcher.end();
-
-        this.shader.unbind();
-
-        ctx.useProgram(ctx.program);
-        // debugger
-
-        this.props.onFrame?.();
+      if(this.isPlay) {
+        // fake.refresh();
       }
-    };
+    });
+  }
+
+  componentWillUnmount() {
+    this.ref.fake.bounds = null;
   }
 
   loadSkeleton(initialAnimation, skin) {
@@ -311,15 +297,15 @@ export default class Spine38WebGL extends karas.Component {
 
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
     let skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
-    this.skeleton = new Skeleton(skeletonData);
-    this.skeleton.setSkinByName(skin);
-    let bounds = calculateBounds(this.skeleton);
+    let skeleton = new Skeleton(skeletonData);
+    skeleton.setSkinByName(skin);
+    let bounds = calculateBounds(skeleton);
     if(!initialAnimation) {
       initialAnimation = skeletonData.animations[0].name;
     }
 
     // Create an AnimationState, and set the initial animation in looping mode.
-    let animationStateData = new AnimationStateData(this.skeleton.data);
+    let animationStateData = new AnimationStateData(skeleton.data);
     let animationState = new AnimationState(animationStateData);
     animationState.setAnimation(0, initialAnimation, true);
     this.props.onStart?.(initialAnimation, this.loopCount);
@@ -334,21 +320,39 @@ export default class Spine38WebGL extends karas.Component {
         else {
           this.props.onEnd?.(initialAnimation);
           animationState.setAnimation(0, this.props.animation, 0);
+          this.isPlay = false;
         }
       },
     });
 
     // Pack everything up and return to caller.
-    return { skeleton: this.skeleton, state: animationState, bounds };
+    return { skeleton, state: animationState, bounds };
   }
 
   render() {
-    return <div ref="mesh" style={this.props.style || {}}>
+    return <div>
       <$ ref="fake" style={{
         width: '100%',
         height: '100%',
-      }}/>
+      }} debug={this.props.debug}
+         fitSize={this.props.fitSize}
+         triangle={this.props.triangle}
+         repeatRender={this.props.repeatRender}
+         onFrame={this.props.onFrame}
+         onRender={this.props.onRender}/>
     </div>;
+  }
+
+  pause() {
+    this.isPlay = false;
+  }
+
+  resume() {
+    this.isPlay = true;
+  }
+
+  set playbackRate(v) {
+    this.ref.fake.playbackRate = parseFloat(v) || 1;
   }
 }
 

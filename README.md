@@ -27,7 +27,7 @@ let root = karas.render(
       onStart={(a)=>{console.log(a, 'start')}}
       onLoop={(a, l)=>{console.log(a, l, 'loop')}}
       fitSize={'contain'} // contain或者cover
-      premultipliedAlpha={false} // 是否预乘
+      premultipliedAlpha={false} // 是否预乘，webgl生效
       atlas="https://gw.alipayobjects.com/os/bmw-prod/d730cf03-b578-4b25-89a1-ebb055827d30.txt"
       image="https://gw.alipayobjects.com/mdn/rms_d4cd3c/afts/img/A*f3ElSKHQjI8AAAAAAAAAAAAAARQnAQ"
       json="https://gw.alipayobjects.com/os/bmw-prod/bb831c1c-d802-4c87-b9a7-cdd492ee399a.json"/>
@@ -42,6 +42,9 @@ spine.playAnimation('run');
 ### method
 
 * playAnimation('run', Infinity, 'default'); // 动画名称，重复次数（可选，默认为Infinity），皮肤名称（可选，默认default）
+* pause() 暂停
+* resume() 继续播放
+* playbackRate 设置速率，默认1
 
 ### props
 #### 必填的props字段
@@ -54,7 +57,9 @@ image：图片url
 #### 选填的props字段
 fitSize：缩放是contain还是cover
 
-premultipliedAlpha：是否预乘
+triangle：spine的配置是否绘制triangle
+
+premultipliedAlpha：是否预乘，仅webgl需要
 
 onEnd：播放结束事件
 
@@ -62,13 +67,17 @@ onStart： 开始播放事件
 
 onLoop：每次循环播放触发一次
 
-animation 动画名称。改这个字段切换不同动画播放。默认是json文件第一个
+animation：动画名称。改这个字段切换不同动画播放。默认是json文件第一个
 
-skin 皮肤名称。可以切换皮肤。默认是default
+skin：皮肤名称。可以切换皮肤。默认是default
 
-loopCount 重复次数。默认无限重复
+loopCount：重复次数。默认无限重复
 
-debug 是否开启debug模式查看每个零件的方框
+debug：是否开启debug模式查看每个零件的方框
+
+repeatRender：每帧重复渲染几次
+
+autoPlay：自动开始播放，默认true
 
 ### TODO
 

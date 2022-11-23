@@ -1,14 +1,5 @@
 // karas画mesh的插件
 import karas from 'karas';
-// import { SkeletonRenderer } from './spine-canvas/SkeletonRenderer';
-// import { AssetManager } from './spine-canvas/AssetManager';
-// import { TextureAtlas } from './spine-core/TextureAtlas';
-// import { AtlasAttachmentLoader } from './spine-core/AtlasAttachmentLoader';
-// import { SkeletonJson } from './spine-core/SkeletonJson';
-// import { Skeleton } from './spine-core/Skeleton';
-// import { Vector2 } from './spine-core/Utils';
-// import { AnimationState } from './spine-core/AnimationState';
-// import { AnimationStateData } from './spine-core/AnimationStateData';
 import SpineCanvas from './spine-canvas';
 
 const {
@@ -31,7 +22,63 @@ class $ extends karas.Geom {
     if(res) {
       return res;
     }
+    // 强制占位，防止离屏bbox空没尺寸
     return true;
+  }
+  render(renderMode, ctx, dx, dy) {
+    if(!this.bounds) {
+      return;
+    }
+    if(!this.renderer) {
+      this.renderer = GlobalSpineRendererMap.get(ctx);
+      if(!this.renderer) {
+        this.renderer = new SkeletonRenderer(ctx);
+        GlobalSpineRendererMap.set(ctx, this.renderer);
+      }
+      this.renderer.debugRendering = !!this.props.debug;
+      this.renderer.triangleRendering = !!this.props.triangle;
+      this.props.onRender?.();
+    }
+
+    this.currentTime = Date.now() * 0.001;
+    let delta = this.currentTime - this.lastTime;
+    if(this.playbackRate && this.playbackRate !== 1) {
+      delta *= this.playbackRate;
+    }
+    this.lastTime = this.currentTime;
+
+    let fitSize = this.props.fitSize;
+    let x = this.bounds.offset.x;
+    let y = this.bounds.offset.y;
+    let width = this.bounds.size.x;
+    let height = this.bounds.size.y;
+    let centerX = x + width * 0.5;
+    let centerY = y + height * 0.5;
+
+    ctx.translate(this.x + dx, this.y + dy);
+    let scx = width / this.width;
+    let scy = height / this.height;
+    let scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+    if(scale !== 1) {
+      ctx.scale(1 / scale, 1 / scale);
+    }
+    ctx.translate(-centerX, -centerY);
+    ctx.translate(this.width * 0.5 * scale, this.height * 0.5 * scale);
+
+    this.state.update(delta);
+    this.state.apply(this.skeleton);
+    this.skeleton.updateWorldTransform();
+    this.renderer.draw(this.skeleton);
+    let repeatRender = this.props.repeatRender;
+    if(repeatRender) {
+      this.renderer.draw(this.skeleton);
+      let n = parseInt(repeatRender) || 0;
+      while(n > 1) {
+        n--;
+        this.renderer.draw(this.skeleton);
+      }
+    }
+    this.props.onFrame?.();
   }
 }
 
@@ -50,15 +97,9 @@ class $ extends karas.Geom {
  * debugger
  */
 export default class Spine38Canvas extends karas.Component {
-
-  verticesData = [];
-  renderer = null;
-  isParsed = false;
-
-  lastTime = Date.now();
-  currentTime = Date.now();
-
   mapping = null;
+  isPlay = false;
+  __playbackRate = 1;
 
   constructor(props) {
     super(props);
@@ -66,21 +107,19 @@ export default class Spine38Canvas extends karas.Component {
     this.animationName = props.animation;
     this.skinName = props.skin || 'default';
     this.loopCount = props.loopCount || Infinity;
-    // 一开始就先加载资源
-    this.load();
+    this.isPlay = props.autoPlay !== false;
   }
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
     this.loopCount = loop;
     let data = this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
-
-    this.state = data.state;
-    this.skeleton = data.skeleton;
-    this.bounds = data.bounds;
-    this.isParsed = true;
-    this.lastTime = Date.now() / 1000;
-    this.currentTime = Date.now() / 1000;
-    this.animationsList = data.animations;
+    let fake = this.ref.fake;
+    fake.state = data.state;
+    fake.skeleton = data.skeleton;
+    fake.bounds = data.bounds;
+    fake.lastTime = Date.now() * 0.001;
+    // 第一帧强制显示
+    fake.refresh();
   }
 
   load() {
@@ -121,82 +160,19 @@ export default class Spine38Canvas extends karas.Component {
     onLoad();
   }
 
-  initRender(ctx) {
-    this.ctx = ctx;
-    this.renderer = GlobalSpineRendererMap.get(this.ctx);
-    if(!this.renderer) {
-      this.renderer = new SkeletonRenderer(ctx);
-      this.renderer.triangleRendering = true;
-      GlobalSpineRendererMap.set(this.ctx, this.renderer);
-    }
+  componentDidMount() {
+    this.load();
+
+    let fake = this.ref.fake;
+    fake.frameAnimate(() => {
+      if(this.isPlay) {
+        fake.refresh();
+      }
+    });
   }
 
-  componentDidMount() {
-    let fake = this.ref.fake;
-
-    fake.frameAnimate(() => {
-      fake.refresh();
-    });
-
-    let isRender, self = this;
-
-    fake.render = (renderMode, ctx, dx, dy) => {
-      if(!this.bounds) {
-        return
-      }
-      if(!isRender) {
-        isRender = true;
-        self.props.onRender?.();
-      }
-      let fitSize = this.props.fitSize;
-      let x = this.bounds.offset.x;
-      let y = this.bounds.offset.y;
-      let width = this.bounds.size.x;
-      let height = this.bounds.size.y;
-      let centerX = x + width * 0.5;
-      let centerY = y + height * 0.5;
-      this.currentTime = Date.now() / 1000;
-
-      let delta = this.currentTime - this.lastTime;
-      this.lastTime = this.currentTime;
-      ctx.translate(fake.x + dx, fake.y + dy);
-      let scale = 1;
-      let scx = width / fake.width;
-      let scy = height / fake.height;
-      scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-      if(scale !== 1) {
-        ctx.scale(1 / scale, 1 / scale);
-      }
-      ctx.translate(-centerX, -centerY);
-      ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);
-
-      if(!this.renderer) {
-        this.initRender(ctx);
-      }
-      if(this.isParsed) {
-        if(this.props.debug) {
-          this.renderer.debugRendering = true;
-        }
-        if(this.props.triangle) {
-          this.renderer.triangleRendering = true;
-        }
-        this.state.update(delta);
-        this.state.apply(this.skeleton);
-        this.skeleton.updateWorldTransform();
-        this.renderer.draw(this.skeleton);
-        let repeatRender = this.props.repeatRender;
-        if(repeatRender) {
-          this.renderer.draw(this.skeleton);
-          let n = parseInt(repeatRender) || 0;
-          while(n > 1) {
-            n--;
-            this.renderer.draw(this.skeleton);
-          }
-        }
-      }
-      // debugger
-      this.props.onFrame?.();
-    };
+  componentWillUnmount() {
+    this.ref.fake.bounds = null;
   }
 
   loadSkeleton(initialAnimation, skin) {
@@ -248,6 +224,7 @@ export default class Spine38Canvas extends karas.Component {
         else {
           this.props.onEnd?.(initialAnimation);
           animationState.setAnimation(0, this.props.animation, 0);
+          this.isPlay = false;
         }
       },
     })
@@ -256,12 +233,29 @@ export default class Spine38Canvas extends karas.Component {
   }
 
   render() {
-    return <div ref="mesh" style={this.props.style || {}}>
+    return <div>
       <$ ref="fake" style={{
         width: '100%',
         height: '100%',
-      }}/>
+      }} debug={this.props.debug}
+         fitSize={this.props.fitSize}
+         triangle={this.props.triangle}
+         repeatRender={this.props.repeatRender}
+         onFrame={this.props.onFrame}
+         onRender={this.props.onRender}/>
     </div>;
+  }
+
+  pause() {
+    this.isPlay = false;
+  }
+
+  resume() {
+    this.isPlay = true;
+  }
+
+  set playbackRate(v) {
+    this.ref.fake.playbackRate = parseFloat(v) || 1;
   }
 }
 

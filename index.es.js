@@ -12904,14 +12904,12 @@ var _karas$math$matrix = karas.math.matrix,
     multiply = _karas$math$matrix.multiply,
     identity = _karas$math$matrix.identity,
     calPoint = _karas$math$matrix.calPoint,
-    _karas$mode = karas.mode;
-    _karas$mode.CANVAS;
-    var WEBGL = _karas$mode.WEBGL,
+    WEBGL = karas.mode.WEBGL,
     _karas$enums$STYLE_KE = karas.enums.STYLE_KEY,
     TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
-    TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
-    PERSPECTIVE = _karas$enums$STYLE_KE.PERSPECTIVE,
-    calMatrixByOrigin = karas.style.transform.calMatrixByOrigin,
+    TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN;
+    _karas$enums$STYLE_KE.PERSPECTIVE;
+    var calMatrixByOrigin = karas.style.transform.calMatrixByOrigin,
     _karas$util = karas.util,
     equalArr = _karas$util.equalArr,
     assignMatrix = _karas$util.assignMatrix;
@@ -12924,23 +12922,156 @@ var $$1 = /*#__PURE__*/function (_karas$Geom) {
   }
 
   _createClass($, [{
+    key: "resize",
+    value: function resize(ctx, env) {
+      var bounds = this.bounds; // magic
+
+      var centerX = bounds.offset.x + bounds.size.x / 2;
+      var centerY = bounds.offset.y + bounds.size.y / 2;
+      var width = env.width,
+          height = env.height;
+      this.mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
+    }
+  }, {
     key: "render",
-    value: function render() {}
+    value: function render(renderMode, ctx, dx, dy) {
+      if (renderMode === WEBGL) {
+        var _this$props$onFrame, _this$props;
+
+        if (!this.bounds) {
+          return;
+        }
+
+        var env = this.env;
+        var CX = env.width * 0.5,
+            CY = env.height * 0.5;
+        this.resize(ctx, env);
+        this.currentTime = Date.now() * 0.001;
+        var delta = this.currentTime - this.lastTime;
+
+        if (this.playbackRate && this.playbackRate !== 1) {
+          delta *= this.playbackRate;
+        }
+
+        this.lastTime = this.currentTime;
+        var bounds = this.bounds;
+        var size = bounds.size,
+            offset = bounds.offset;
+        var x = offset.x;
+        var y = offset.y;
+        var width = size.x;
+        var height = size.y;
+        var centerX = x + width * 0.5;
+        var centerY = y + height * 0.5;
+        var tfo = [centerX / CX, centerY / CY];
+        var pm = this.matrixEvent,
+            lastPm = this.lastPm;
+
+        if (lastPm && equalArr(pm, lastPm)) {
+          this.lastMatrix && assignMatrix(this.mvp.values, this.lastMatrix);
+        } else {
+          // 先以骨骼原本的中心点为基准，应用节点的matrix，如果是局部缓存，则为E
+          if (!isE(pm) && env.node !== this.__domParent) {
+            var m = identity(),
+                node = this;
+
+            while (node) {
+              var t = calWebglMatrix(node, CX, CY, dx, dy);
+
+              if (t) {
+                m = multiply(t, m);
+              }
+
+              node = node.__domParent; // 局部根节点，或者root
+
+              if (node === env.node) {
+                break;
+              }
+            } // root左上原点对齐中心，上下翻转y
+
+
+            this.mvp.translate(tfo[0], tfo[1], 0);
+            m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
+            this.mvp.multiplyLeft({
+              values: m
+            });
+            this.mvp.multiply({
+              values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
+            });
+            this.mvp.translate(-tfo[0], -tfo[1], 0);
+          }
+
+          var fitSize = this.props.fitSize;
+          var scx = width / this.width;
+          var scy = height / this.height;
+          var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+
+          if (scale !== 1) {
+            // 对齐中心点后缩放
+            var _tfo = [centerX / CX, centerY / CY];
+            this.mvp.translate(_tfo[0], _tfo[1], 0);
+
+            var _m = karas.math.matrix.identity();
+
+            _m[0] = 1 / scale;
+            _m[5] = 1 / scale;
+            this.mvp.multiply({
+              values: _m
+            });
+            this.mvp.translate(-_tfo[0] / scale, -_tfo[1] / scale, 0);
+          } // 还原位置，先对齐中心点，再校正
+
+
+          if (env.node !== this.__domParent) {
+            var x0 = this.x + dx + this.width * 0.5;
+            var y0 = this.y + dy + this.height * 0.5;
+            var p1 = calPoint({
+              x: centerX,
+              y: centerY
+            }, this.mvp.values);
+            var p = calPoint({
+              x: x0,
+              y: y0
+            }, pm);
+            this.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
+            this.mvp.translate(-p1.x, -p1.y, 0);
+          }
+
+          this.lastMatrix = this.mvp.values.slice(0);
+        }
+
+        this.lastPm = pm.slice(0);
+        this.state.update(delta);
+        this.state.apply(this.skeleton);
+        this.skeleton.updateWorldTransform(); // Bind the shader and set the texture and model-view-projection matrix.
+
+        this.shader.bind();
+        this.shader.setUniformi(Shader.SAMPLER, 0);
+        this.shader.setUniform4x4f(Shader.MVP_MATRIX, this.mvp.values); // Start the batch and tell the SkeletonRenderer to render the active skeleton.
+
+        this.batcher.begin(this.shader);
+        this.renderer.premultipliedAlpha = !!this.props.premultipliedAlpha;
+        this.renderer.draw(this.batcher, this.skeleton);
+        this.batcher.end();
+        this.shader.unbind();
+        (_this$props$onFrame = (_this$props = this.props).onFrame) === null || _this$props$onFrame === void 0 ? void 0 : _this$props$onFrame.call(_this$props);
+      }
+    }
   }]);
 
   return $;
 }(karas.Geom);
 
-function calWebglMatrix(node, cx, cy) {
+function calWebglMatrix(node, cx, cy, dx, dy) {
   var x = node.__x1,
       y = node.__y1;
-  var currentStyle = node.currentStyle,
-      computedStyle = node.computedStyle;
+  node.__currentStyle;
+      var computedStyle = node.__computedStyle;
   var matrix = computedStyle[TRANSFORM];
 
   if (matrix && !isE(matrix)) {
-    var tfo = currentStyle[TRANSFORM_ORIGIN];
-    matrix = calMatrixByOrigin(matrix, (cx - x - tfo[0]) / cx, (cy - y - tfo[1]) / cy);
+    var tfo = computedStyle[TRANSFORM_ORIGIN];
+    matrix = calMatrixByOrigin(matrix, (cx - x - dx - tfo[0]) / cx, (cy - y - dy - tfo[1]) / cy);
   }
 
   return matrix;
@@ -12969,19 +13100,13 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
 
     _this = _karas$Component.call(this, props) || this;
 
-    _defineProperty(_assertThisInitialized(_this), "verticesData", []);
-
-    _defineProperty(_assertThisInitialized(_this), "renderer", null);
-
-    _defineProperty(_assertThisInitialized(_this), "isParsed", false);
-
-    _defineProperty(_assertThisInitialized(_this), "lastTime", Date.now());
-
-    _defineProperty(_assertThisInitialized(_this), "currentTime", Date.now());
-
     _defineProperty(_assertThisInitialized(_this), "mvp", new Matrix4());
 
     _defineProperty(_assertThisInitialized(_this), "mapping", null);
+
+    _defineProperty(_assertThisInitialized(_this), "isPlay", false);
+
+    _defineProperty(_assertThisInitialized(_this), "__playbackRate", 1);
 
     _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
       var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
@@ -12999,19 +13124,42 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       _this.lastTime = Date.now() / 1000;
       _this.currentTime = Date.now() / 1000;
       _this.animationsList = data.animations;
+      var fake = _this.ref.fake;
+      fake.state = data.state;
+      fake.skeleton = data.skeleton;
+      fake.bounds = data.bounds;
+      fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
+
+      fake.refresh();
     });
 
     _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
     _this.loopCount = props.loopCount || Infinity;
+    _this.isPlay = props.autoPlay !== false;
     return _this;
   }
 
   _createClass(Spine38WebGL, [{
     key: "load",
-    value: function load() {
+    value: function load(ctx) {
       var _this2 = this;
 
+      var fake = this.ref.fake;
+      this.renderer = GlobalSpineRendererMap$1.get(ctx);
+
+      if (!this.renderer) {
+        this.renderer = new SkeletonRenderer$1(ctx);
+        this.shader = Shader.newTwoColoredTextured(ctx);
+        this.batcher = new PolygonBatcher(ctx);
+        this.assetManager = new AssetManager$1(ctx, undefined, false, 0);
+        GlobalSpineRendererMap$1.set(ctx, this.renderer);
+      }
+
+      fake.renderer = this.renderer;
+      fake.shader = this.shader;
+      fake.batcher = this.batcher;
+      fake.mvp = this.mvp;
       var assetManager = this.assetManager;
       var img = this.props.image;
 
@@ -13053,213 +13201,26 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       onLoad();
     }
   }, {
-    key: "initRender",
-    value: function initRender(ctx, unit) {
-      this.ctx = ctx;
-      this.renderer = GlobalSpineRendererMap$1.get(this.ctx);
-
-      if (!this.renderer) {
-        this.renderer = new SkeletonRenderer$1(ctx);
-        this.shader = Shader.newTwoColoredTextured(ctx);
-        this.batcher = new PolygonBatcher(ctx);
-        this.assetManager = new AssetManager$1(ctx, undefined, false, unit);
-        this.load();
-        GlobalSpineRendererMap$1.set(this.ctx, this.renderer);
-      }
-    }
-  }, {
-    key: "resize",
-    value: function resize(canvas, ctx) {
-      var bounds = this.bounds; // magic
-
-      var centerX = bounds.offset.x + bounds.size.x / 2;
-      var centerY = bounds.offset.y + bounds.size.y / 2;
-      var width = canvas.width;
-      var height = canvas.height;
-      this.mvp.ortho2d(centerX - width / 2, centerY - height / 2, width, height);
-    }
-  }, {
     key: "componentDidMount",
     value: function componentDidMount() {
       var _this3 = this;
 
+      this.load(this.root.ctx);
       var fake = this.ref.fake;
       fake.frameAnimate(function () {
-        fake.refresh();
+        if (_this3.isPlay) ;
       });
-      var isRender,
-          self = this,
-          lastPm,
-          lastMatrix;
-
-      fake.render = function (renderMode, ctx, dx, dy) {
-        if (renderMode === WEBGL) {
-          var _this3$props$onFrame, _this3$props;
-
-          if (!_this3.renderer) {
-            _this3.initRender(ctx, 0);
-          }
-
-          if (!_this3.bounds) {
-            return;
-          }
-
-          if (!isRender) {
-            var _self$props$onRender, _self$props;
-
-            isRender = true;
-            (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
-          }
-
-          var canvas = ctx.canvas;
-          var W = canvas.width,
-              H = canvas.height,
-              CX = W * 0.5,
-              CY = H * 0.5;
-
-          _this3.resize(canvas, ctx);
-
-          _this3.currentTime = Date.now() / 1000;
-          var delta = _this3.currentTime - _this3.lastTime;
-          _this3.lastTime = _this3.currentTime;
-          var bounds = _this3.bounds;
-          var size = bounds.size,
-              offset = bounds.offset;
-          var x = offset.x;
-          var y = offset.y;
-          var width = size.x;
-          var height = size.y;
-          var centerX = x + width * 0.5;
-          var centerY = y + height * 0.5;
-          var tfo = [centerX / CX, centerY / CY];
-          var pm = fake.matrixEvent;
-
-          if (lastPm && equalArr(pm, lastPm)) {
-            lastMatrix && assignMatrix(_this3.mvp.values, lastMatrix);
-          } else {
-            var isPpt = false; // 先以骨骼原本的中心点为基准，应用节点的matrix
-
-            if (!isE(pm)) {
-              var m = identity(),
-                  node = fake;
-
-              while (node) {
-                var computedStyle = node.computedStyle; // 有透视则退出，直接应用透视
-
-                if (computedStyle[PERSPECTIVE] || node.__selfPerspective) {
-                  isPpt = true;
-                  break;
-                }
-
-                var t = calWebglMatrix(node, CX, CY);
-
-                if (t) {
-                  m = multiply(t, m);
-                }
-
-                node = node.domParent;
-              } // root左上原点对齐中心，上下翻转y
-
-
-              if (!isPpt) {
-                _this3.mvp.translate(tfo[0], tfo[1], 0);
-
-                m = multiply([1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1], m);
-
-                _this3.mvp.multiplyLeft({
-                  values: m
-                });
-
-                _this3.mvp.multiply({
-                  values: [1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]
-                });
-
-                _this3.mvp.translate(-tfo[0], -tfo[1], 0);
-              }
-            }
-
-            var fitSize = _this3.props.fitSize;
-            var scx = width / fake.width;
-            var scy = height / fake.height;
-            var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-
-            if (scale !== 1 && !isPpt) {
-              // 对齐中心点后缩放
-              var _tfo = [centerX / CX, centerY / CY];
-
-              _this3.mvp.translate(_tfo[0], _tfo[1], 0);
-
-              var _m = karas.math.matrix.identity();
-
-              _m[0] = 1 / scale;
-              _m[5] = 1 / scale;
-
-              _this3.mvp.multiply({
-                values: _m
-              });
-
-              _this3.mvp.translate(-_tfo[0] / scale, -_tfo[1] / scale, 0);
-            } // 还原位置，先对齐中心点，再校正
-
-
-            if (!isPpt) {
-              var x0 = fake.x + dx + fake.width * 0.5;
-              var y0 = fake.y + dy + fake.height * 0.5;
-              var p1 = calPoint({
-                x: centerX,
-                y: centerY
-              }, _this3.mvp.values);
-              var p = calPoint({
-                x: x0,
-                y: y0
-              }, pm);
-
-              _this3.mvp.translate((p.x - CX) / CX, (-p.y + CY) / CY, 0);
-
-              _this3.mvp.translate(-p1.x, -p1.y, 0);
-            }
-
-            lastMatrix = _this3.mvp.values.slice(0);
-          }
-
-          lastPm = pm.slice(0);
-
-          _this3.state.update(delta);
-
-          _this3.state.apply(_this3.skeleton);
-
-          _this3.skeleton.updateWorldTransform(); // Bind the shader and set the texture and model-view-projection matrix.
-
-
-          _this3.shader.bind();
-
-          _this3.shader.setUniformi(Shader.SAMPLER, 0);
-
-          _this3.shader.setUniform4x4f(Shader.MVP_MATRIX, _this3.mvp.values); // Start the batch and tell the SkeletonRenderer to render the active skeleton.
-
-
-          if (!_this3.batcher.isDrawing) {
-            _this3.batcher.begin(_this3.shader);
-          }
-
-          _this3.renderer.premultipliedAlpha = !!_this3.props.premultipliedAlpha;
-
-          _this3.renderer.draw(_this3.batcher, _this3.skeleton); // this.batcher.end();
-
-
-          _this3.shader.unbind();
-
-          ctx.useProgram(ctx.program); // debugger
-
-          (_this3$props$onFrame = (_this3$props = _this3.props).onFrame) === null || _this3$props$onFrame === void 0 ? void 0 : _this3$props$onFrame.call(_this3$props);
-        }
-      };
+    }
+  }, {
+    key: "componentWillUnmount",
+    value: function componentWillUnmount() {
+      this.ref.fake.bounds = null;
     }
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
       var _this$props$onStart,
-          _this$props,
+          _this$props2,
           _this4 = this;
 
       if (skin === undefined || skin === null) {
@@ -13274,19 +13235,19 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var skeletonBinary = new SkeletonJson$1(atlasLoader); // Set the scale to apply during parsing, parse the file, and create a new skeleton.
 
       var skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
-      this.skeleton = new Skeleton$1(skeletonData);
-      this.skeleton.setSkinByName(skin);
-      var bounds = calculateBounds$1(this.skeleton);
+      var skeleton = new Skeleton$1(skeletonData);
+      skeleton.setSkinByName(skin);
+      var bounds = calculateBounds$1(skeleton);
 
       if (!initialAnimation) {
         initialAnimation = skeletonData.animations[0].name;
       } // Create an AnimationState, and set the initial animation in looping mode.
 
 
-      var animationStateData = new AnimationStateData$1(this.skeleton.data);
+      var animationStateData = new AnimationStateData$1(skeleton.data);
       var animationState = new AnimationState$1(animationStateData);
       animationState.setAnimation(0, initialAnimation, true);
-      (_this$props$onStart = (_this$props = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props, initialAnimation, this.loopCount);
+      (_this$props$onStart = (_this$props2 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props2, initialAnimation, this.loopCount);
       animationState.addListener({
         complete: function complete() {
           var _this4$props$onLoop, _this4$props;
@@ -13301,12 +13262,13 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
 
             (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, initialAnimation);
             animationState.setAnimation(0, _this4.props.animation, 0);
+            _this4.isPlay = false;
           }
         }
       }); // Pack everything up and return to caller.
 
       return {
-        skeleton: this.skeleton,
+        skeleton: skeleton,
         state: animationState,
         bounds: bounds
       };
@@ -13314,16 +13276,34 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "render",
     value: function render() {
-      return karas.createElement("div", {
-        ref: "mesh",
-        style: this.props.style || {}
-      }, karas.createElement($$1, {
+      return karas.createElement("div", null, karas.createElement($$1, {
         ref: "fake",
         style: {
           width: '100%',
           height: '100%'
-        }
+        },
+        debug: this.props.debug,
+        fitSize: this.props.fitSize,
+        triangle: this.props.triangle,
+        repeatRender: this.props.repeatRender,
+        onFrame: this.props.onFrame,
+        onRender: this.props.onRender
       }));
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      this.isPlay = false;
+    }
+  }, {
+    key: "resume",
+    value: function resume() {
+      this.isPlay = true;
+    }
+  }, {
+    key: "playbackRate",
+    set: function set(v) {
+      this.ref.fake.playbackRate = parseFloat(v) || 1;
     }
   }]);
 
@@ -23308,9 +23288,78 @@ var $ = /*#__PURE__*/function (_karas$Geom) {
 
       if (res) {
         return res;
-      }
+      } // 强制占位，防止离屏bbox空没尺寸
+
 
       return true;
+    }
+  }, {
+    key: "render",
+    value: function render(renderMode, ctx, dx, dy) {
+      var _this$props$onFrame, _this$props2;
+
+      if (!this.bounds) {
+        return;
+      }
+
+      if (!this.renderer) {
+        var _this$props$onRender, _this$props;
+
+        this.renderer = GlobalSpineRendererMap.get(ctx);
+
+        if (!this.renderer) {
+          this.renderer = new SkeletonRenderer(ctx);
+          GlobalSpineRendererMap.set(ctx, this.renderer);
+        }
+
+        this.renderer.debugRendering = !!this.props.debug;
+        this.renderer.triangleRendering = !!this.props.triangle;
+        (_this$props$onRender = (_this$props = this.props).onRender) === null || _this$props$onRender === void 0 ? void 0 : _this$props$onRender.call(_this$props);
+      }
+
+      this.currentTime = Date.now() * 0.001;
+      var delta = this.currentTime - this.lastTime;
+
+      if (this.playbackRate && this.playbackRate !== 1) {
+        delta *= this.playbackRate;
+      }
+
+      this.lastTime = this.currentTime;
+      var fitSize = this.props.fitSize;
+      var x = this.bounds.offset.x;
+      var y = this.bounds.offset.y;
+      var width = this.bounds.size.x;
+      var height = this.bounds.size.y;
+      var centerX = x + width * 0.5;
+      var centerY = y + height * 0.5;
+      ctx.translate(this.x + dx, this.y + dy);
+      var scx = width / this.width;
+      var scy = height / this.height;
+      var scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
+
+      if (scale !== 1) {
+        ctx.scale(1 / scale, 1 / scale);
+      }
+
+      ctx.translate(-centerX, -centerY);
+      ctx.translate(this.width * 0.5 * scale, this.height * 0.5 * scale);
+      this.state.update(delta);
+      this.state.apply(this.skeleton);
+      this.skeleton.updateWorldTransform();
+      this.renderer.draw(this.skeleton);
+      var repeatRender = this.props.repeatRender;
+
+      if (repeatRender) {
+        this.renderer.draw(this.skeleton);
+        var n = parseInt(repeatRender) || 0;
+
+        while (n > 1) {
+          n--;
+          this.renderer.draw(this.skeleton);
+        }
+      }
+
+      (_this$props$onFrame = (_this$props2 = this.props).onFrame) === null || _this$props$onFrame === void 0 ? void 0 : _this$props$onFrame.call(_this$props2);
     }
   }]);
 
@@ -23340,17 +23389,11 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
 
     _this = _karas$Component.call(this, props) || this;
 
-    _defineProperty(_assertThisInitialized(_this), "verticesData", []);
-
-    _defineProperty(_assertThisInitialized(_this), "renderer", null);
-
-    _defineProperty(_assertThisInitialized(_this), "isParsed", false);
-
-    _defineProperty(_assertThisInitialized(_this), "lastTime", Date.now());
-
-    _defineProperty(_assertThisInitialized(_this), "currentTime", Date.now());
-
     _defineProperty(_assertThisInitialized(_this), "mapping", null);
+
+    _defineProperty(_assertThisInitialized(_this), "isPlay", false);
+
+    _defineProperty(_assertThisInitialized(_this), "__playbackRate", 1);
 
     _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
       var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
@@ -23361,21 +23404,19 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       var data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
 
 
-      _this.state = data.state;
-      _this.skeleton = data.skeleton;
-      _this.bounds = data.bounds;
-      _this.isParsed = true;
-      _this.lastTime = Date.now() / 1000;
-      _this.currentTime = Date.now() / 1000;
-      _this.animationsList = data.animations;
+      var fake = _this.ref.fake;
+      fake.state = data.state;
+      fake.skeleton = data.skeleton;
+      fake.bounds = data.bounds;
+      fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
+
+      fake.refresh();
     });
 
     _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
-    _this.loopCount = props.loopCount || Infinity; // 一开始就先加载资源
-
-    _this.load();
-
+    _this.loopCount = props.loopCount || Infinity;
+    _this.isPlay = props.autoPlay !== false;
     return _this;
   }
 
@@ -23424,112 +23465,29 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       onLoad();
     }
   }, {
-    key: "initRender",
-    value: function initRender(ctx) {
-      this.ctx = ctx;
-      this.renderer = GlobalSpineRendererMap.get(this.ctx);
-
-      if (!this.renderer) {
-        this.renderer = new SkeletonRenderer(ctx);
-        this.renderer.triangleRendering = true;
-        GlobalSpineRendererMap.set(this.ctx, this.renderer);
-      }
-    }
-  }, {
     key: "componentDidMount",
     value: function componentDidMount() {
       var _this3 = this;
 
+      this.load();
       var fake = this.ref.fake;
       fake.frameAnimate(function () {
-        fake.refresh();
+        if (_this3.isPlay) {
+          fake.refresh();
+        }
       });
-      var isRender,
-          self = this;
-
-      fake.render = function (renderMode, ctx, dx, dy) {
-        var _this3$props$onFrame, _this3$props;
-
-        if (!_this3.bounds) {
-          return;
-        }
-
-        if (!isRender) {
-          var _self$props$onRender, _self$props;
-
-          isRender = true;
-          (_self$props$onRender = (_self$props = self.props).onRender) === null || _self$props$onRender === void 0 ? void 0 : _self$props$onRender.call(_self$props);
-        }
-
-        var fitSize = _this3.props.fitSize;
-        var x = _this3.bounds.offset.x;
-        var y = _this3.bounds.offset.y;
-        var width = _this3.bounds.size.x;
-        var height = _this3.bounds.size.y;
-        var centerX = x + width * 0.5;
-        var centerY = y + height * 0.5;
-        _this3.currentTime = Date.now() / 1000;
-        var delta = _this3.currentTime - _this3.lastTime;
-        _this3.lastTime = _this3.currentTime;
-        ctx.translate(fake.x + dx, fake.y + dy);
-        var scale = 1;
-        var scx = width / fake.width;
-        var scy = height / fake.height;
-        scale = fitSize === 'cover' ? Math.min(scx, scy) : Math.max(scx, scy);
-
-        if (scale !== 1) {
-          ctx.scale(1 / scale, 1 / scale);
-        }
-
-        ctx.translate(-centerX, -centerY);
-        ctx.translate(fake.width * 0.5 * scale, fake.height * 0.5 * scale);
-
-        if (!_this3.renderer) {
-          _this3.initRender(ctx);
-        }
-
-        if (_this3.isParsed) {
-          if (_this3.props.debug) {
-            _this3.renderer.debugRendering = true;
-          }
-
-          if (_this3.props.triangle) {
-            _this3.renderer.triangleRendering = true;
-          }
-
-          _this3.state.update(delta);
-
-          _this3.state.apply(_this3.skeleton);
-
-          _this3.skeleton.updateWorldTransform();
-
-          _this3.renderer.draw(_this3.skeleton);
-
-          var repeatRender = _this3.props.repeatRender;
-
-          if (repeatRender) {
-            _this3.renderer.draw(_this3.skeleton);
-
-            var n = parseInt(repeatRender) || 0;
-
-            while (n > 1) {
-              n--;
-
-              _this3.renderer.draw(_this3.skeleton);
-            }
-          }
-        } // debugger
-
-
-        (_this3$props$onFrame = (_this3$props = _this3.props).onFrame) === null || _this3$props$onFrame === void 0 ? void 0 : _this3$props$onFrame.call(_this3$props);
-      };
+    }
+  }, {
+    key: "componentWillUnmount",
+    value: function componentWillUnmount() {
+      this.ref.fake.bounds = null;
     }
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
       var _this4 = this,
           _this$props$onStart,
-          _this$props;
+          _this$props3;
 
       if (skin === undefined || skin === null) {
         skin = 'default';
@@ -23567,7 +23525,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
 
       var animationState = new AnimationState(new AnimationStateData(skeleton.data));
       animationState.setAnimation(0, initialAnimation, 0);
-      (_this$props$onStart = (_this$props = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props, initialAnimation, this.loopCount);
+      (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, initialAnimation, this.loopCount);
       animationState.addListener({
         complete: function complete() {
           var _this4$props$onLoop, _this4$props;
@@ -23582,6 +23540,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
 
             (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, initialAnimation);
             animationState.setAnimation(0, _this4.props.animation, 0);
+            _this4.isPlay = false;
           }
         }
       });
@@ -23594,16 +23553,34 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "render",
     value: function render() {
-      return karas.createElement("div", {
-        ref: "mesh",
-        style: this.props.style || {}
-      }, karas.createElement($, {
+      return karas.createElement("div", null, karas.createElement($, {
         ref: "fake",
         style: {
           width: '100%',
           height: '100%'
-        }
+        },
+        debug: this.props.debug,
+        fitSize: this.props.fitSize,
+        triangle: this.props.triangle,
+        repeatRender: this.props.repeatRender,
+        onFrame: this.props.onFrame,
+        onRender: this.props.onRender
       }));
+    }
+  }, {
+    key: "pause",
+    value: function pause() {
+      this.isPlay = false;
+    }
+  }, {
+    key: "resume",
+    value: function resume() {
+      this.isPlay = true;
+    }
+  }, {
+    key: "playbackRate",
+    set: function set(v) {
+      this.ref.fake.playbackRate = parseFloat(v) || 1;
     }
   }]);
 
@@ -23622,7 +23599,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.3.3";
+var version = "0.3.4";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map
