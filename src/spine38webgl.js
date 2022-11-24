@@ -145,6 +145,9 @@ class $ extends karas.Geom {
       this.batcher.end();
 
       this.shader.unbind();
+      // 渲染完恢复
+      ctx.enable(ctx.BLEND);
+      ctx.blendFunc(ctx.ONE, ctx.ONE_MINUS_SRC_ALPHA);
       this.props.onFrame?.();
     }
   }
@@ -213,10 +216,15 @@ export default class Spine38WebGL extends karas.Component {
 
   load(ctx) {
     let fake = this.ref.fake;
-    this.renderer = GlobalSpineRendererMap.get(ctx);
     if(!this.renderer) {
-      this.renderer = new SkeletonRenderer(ctx);
-      GlobalSpineRendererMap.set(ctx, this.renderer);
+      this.renderer = GlobalSpineRendererMap.get(ctx);
+      if(!this.renderer) {
+        this.renderer = new SkeletonRenderer(ctx);
+        GlobalSpineRendererMap.set(ctx, this.renderer);
+      }
+      // this.renderer.debugRendering = !!this.props.debug;
+      // this.renderer.triangleRendering = !!this.props.triangle;
+      this.props.onRender?.();
     }
     if(!this.shader) {
       this.shader = Shader.newTwoColoredTextured(ctx);
@@ -336,6 +344,7 @@ export default class Spine38WebGL extends karas.Component {
       }} debug={this.props.debug}
          fitSize={this.props.fitSize}
          triangle={this.props.triangle}
+         premultipliedAlpha={this.props.premultipliedAlpha}
          repeatRender={this.props.repeatRender}
          onFrame={this.props.onFrame}
          onRender={this.props.onRender}/>

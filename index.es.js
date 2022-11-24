@@ -13052,7 +13052,10 @@ var $$1 = /*#__PURE__*/function (_karas$Geom) {
         this.renderer.premultipliedAlpha = !!this.props.premultipliedAlpha;
         this.renderer.draw(this.batcher, this.skeleton);
         this.batcher.end();
-        this.shader.unbind();
+        this.shader.unbind(); // 渲染完恢复
+
+        ctx.enable(ctx.BLEND);
+        ctx.blendFunc(ctx.ONE, ctx.ONE_MINUS_SRC_ALPHA);
         (_this$props$onFrame = (_this$props = this.props).onFrame) === null || _this$props$onFrame === void 0 ? void 0 : _this$props$onFrame.call(_this$props);
       }
     }
@@ -13144,11 +13147,20 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var _this2 = this;
 
       var fake = this.ref.fake;
-      this.renderer = GlobalSpineRendererMap$1.get(ctx);
 
       if (!this.renderer) {
-        this.renderer = new SkeletonRenderer$1(ctx);
-        GlobalSpineRendererMap$1.set(ctx, this.renderer);
+        var _this$props$onRender, _this$props2;
+
+        this.renderer = GlobalSpineRendererMap$1.get(ctx);
+
+        if (!this.renderer) {
+          this.renderer = new SkeletonRenderer$1(ctx);
+          GlobalSpineRendererMap$1.set(ctx, this.renderer);
+        } // this.renderer.debugRendering = !!this.props.debug;
+        // this.renderer.triangleRendering = !!this.props.triangle;
+
+
+        (_this$props$onRender = (_this$props2 = this.props).onRender) === null || _this$props$onRender === void 0 ? void 0 : _this$props$onRender.call(_this$props2);
       }
 
       if (!this.shader) {
@@ -13223,7 +13235,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
       var _this$props$onStart,
-          _this$props2,
+          _this$props3,
           _this4 = this;
 
       if (skin === undefined || skin === null) {
@@ -13250,7 +13262,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var animationStateData = new AnimationStateData$1(skeleton.data);
       var animationState = new AnimationState$1(animationStateData);
       animationState.setAnimation(0, initialAnimation, true);
-      (_this$props$onStart = (_this$props2 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props2, initialAnimation, this.loopCount);
+      (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, initialAnimation, this.loopCount);
       animationState.addListener({
         complete: function complete() {
           var _this4$props$onLoop, _this4$props;
@@ -13288,6 +13300,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
         debug: this.props.debug,
         fitSize: this.props.fitSize,
         triangle: this.props.triangle,
+        premultipliedAlpha: this.props.premultipliedAlpha,
         repeatRender: this.props.repeatRender,
         onFrame: this.props.onFrame,
         onRender: this.props.onRender
@@ -23602,7 +23615,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.3.6";
+var version = "0.3.7";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map
