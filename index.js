@@ -13299,7 +13299,9 @@
     }, {
       key: "render",
       value: function render() {
-        return karas__default["default"].createElement("div", null, karas__default["default"].createElement($$1, {
+        return karas__default["default"].createElement("div", {
+          cacheAsBitmap: true
+        }, karas__default["default"].createElement($$1, {
           ref: "fake",
           style: {
             width: '100%',
@@ -23577,7 +23579,9 @@
     }, {
       key: "render",
       value: function render() {
-        return karas__default["default"].createElement("div", null, karas__default["default"].createElement($, {
+        return karas__default["default"].createElement("div", {
+          cacheAsBitmap: true
+        }, karas__default["default"].createElement($, {
           ref: "fake",
           style: {
             width: '100%',
@@ -23623,7 +23627,7 @@
     };
   }
 
-  var version = "0.3.7";
+  var version = "0.4.0";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

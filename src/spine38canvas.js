@@ -233,7 +233,7 @@ export default class Spine38Canvas extends karas.Component {
   }
 
   render() {
-    return <div>
+    return <div cacheAsBitmap={true}>
       <$ ref="fake" style={{
         width: '100%',
         height: '100%',
