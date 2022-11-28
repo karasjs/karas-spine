@@ -13133,6 +13133,9 @@
         _this.lastTime = Date.now() / 1000;
         _this.currentTime = Date.now() / 1000;
         _this.animationsList = data.animations;
+
+        _this.resume();
+
         var fake = _this.ref.fake;
         fake.state = data.state;
         fake.skeleton = data.skeleton;
@@ -23430,6 +23433,8 @@
         var data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
 
 
+        _this.resume();
+
         var fake = _this.ref.fake;
         fake.state = data.state;
         fake.skeleton = data.skeleton;
@@ -23627,7 +23632,7 @@
     };
   }
 
-  var version = "0.4.1";
+  var version = "0.4.2";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;

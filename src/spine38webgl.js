@@ -204,6 +204,7 @@ export default class Spine38WebGL extends karas.Component {
     this.lastTime = Date.now() / 1000;
     this.currentTime = Date.now() / 1000;
     this.animationsList = data.animations;
+    this.resume();
 
     let fake = this.ref.fake;
     fake.state = data.state;

@@ -113,6 +113,7 @@ export default class Spine38Canvas extends karas.Component {
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
     this.loopCount = loop;
     let data = this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+    this.resume();
     let fake = this.ref.fake;
     fake.state = data.state;
     fake.skeleton = data.skeleton;
