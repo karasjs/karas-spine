@@ -13276,7 +13276,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
             var _this4$props$onEnd, _this4$props2;
 
             (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, initialAnimation);
-            animationState.setAnimation(0, _this4.props.animation, 0);
+            animationState.setAnimation(0, initialAnimation, 0);
             _this4.isPlay = false;
           }
         }
@@ -23557,7 +23557,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
             var _this4$props$onEnd, _this4$props2;
 
             (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, initialAnimation);
-            animationState.setAnimation(0, _this4.props.animation, 0);
+            animationState.setAnimation(0, initialAnimation, 0);
             _this4.isPlay = false;
           }
         }
@@ -23619,7 +23619,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.4.0";
+var version = "0.4.1";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map

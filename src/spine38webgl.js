@@ -326,7 +326,7 @@ export default class Spine38WebGL extends karas.Component {
         }
         else {
           this.props.onEnd?.(initialAnimation);
-          animationState.setAnimation(0, this.props.animation, 0);
+          animationState.setAnimation(0, initialAnimation, 0);
           this.isPlay = false;
         }
       },
