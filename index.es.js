@@ -13114,33 +13114,41 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
       var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.skinName;
       _this.loopCount = loop;
+      var data;
 
-      var data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+      if (_this.state) {
+        _this.state.removeListener(_this.stateListener);
 
+        _this.stateListener = _this.loadFin(_this.state, animationName);
+      } else {
+        data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
 
-      _this.state = data.state;
-      _this.skeleton = data.skeleton;
-      _this.bounds = data.bounds;
-      _this.isParsed = true;
-      _this.lastTime = Date.now() / 1000;
-      _this.currentTime = Date.now() / 1000;
-      _this.animationsList = data.animations;
+        _this.state = data.state;
+        _this.stateDate = data.stateDate;
+        _this.skeleton = data.skeleton;
+        _this.bounds = data.bounds;
+        _this.stateListener = data.listener;
+        _this.isParsed = true;
+        _this.lastTime = Date.now() / 1000;
+        _this.currentTime = Date.now() / 1000;
+        _this.animationsList = data.animations;
+        var fake = _this.ref.fake;
+        fake.state = data.state;
+        fake.skeleton = data.skeleton;
+        fake.bounds = data.bounds;
+        fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
+
+        fake.refresh();
+      }
 
       _this.resume();
-
-      var fake = _this.ref.fake;
-      fake.state = data.state;
-      fake.skeleton = data.skeleton;
-      fake.bounds = data.bounds;
-      fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
-
-      fake.refresh();
     });
 
     _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
     _this.loopCount = props.loopCount || Infinity;
     _this.isPlay = props.autoPlay !== false;
+    _this.__playbackRate = props.playbackRate || 1;
     return _this;
   }
 
@@ -13237,10 +13245,6 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
-      var _this$props$onStart,
-          _this$props3,
-          _this4 = this;
-
       if (skin === undefined || skin === null) {
         skin = 'default';
       } // Load the texture atlas using name.atlas from the AssetManager.
@@ -13264,32 +13268,45 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
 
       var animationStateData = new AnimationStateData$1(skeleton.data);
       var animationState = new AnimationState$1(animationStateData);
-      animationState.setAnimation(0, initialAnimation, true);
-      (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, initialAnimation, this.loopCount);
-      animationState.addListener({
-        complete: function complete() {
-          var _this4$props$onLoop, _this4$props;
-
-          _this4.loopCount--;
-          (_this4$props$onLoop = (_this4$props = _this4.props).onLoop) === null || _this4$props$onLoop === void 0 ? void 0 : _this4$props$onLoop.call(_this4$props, initialAnimation, _this4.loopCount);
-
-          if (_this4.loopCount > 0) {
-            animationState.setAnimation(0, initialAnimation, 0);
-          } else {
-            var _this4$props$onEnd, _this4$props2;
-
-            (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, initialAnimation);
-            animationState.setAnimation(0, initialAnimation, 0);
-            _this4.isPlay = false;
-          }
-        }
-      }); // Pack everything up and return to caller.
+      var listener = this.loadFin(animationState, initialAnimation); // Pack everything up and return to caller.
 
       return {
         skeleton: skeleton,
         state: animationState,
-        bounds: bounds
+        stateDate: animationStateData,
+        bounds: bounds,
+        listener: listener
       };
+    }
+  }, {
+    key: "loadFin",
+    value: function loadFin(animationState, animationName) {
+      var _this$props$onStart,
+          _this$props3,
+          _this4 = this;
+
+      animationState.setAnimation(0, animationName, true);
+      (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, animationName, this.loopCount);
+      var o = {
+        complete: function complete() {
+          var _this4$props$onLoop, _this4$props;
+
+          _this4.loopCount--;
+          (_this4$props$onLoop = (_this4$props = _this4.props).onLoop) === null || _this4$props$onLoop === void 0 ? void 0 : _this4$props$onLoop.call(_this4$props, animationName, _this4.loopCount);
+
+          if (_this4.loopCount > 0) {
+            animationState.setAnimation(0, animationName, 0);
+          } else {
+            var _this4$props$onEnd, _this4$props2;
+
+            (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, animationName);
+            animationState.setAnimation(0, animationName, 0);
+            _this4.isPlay = false;
+          }
+        }
+      };
+      animationState.addListener(o);
+      return o;
     }
   }, {
     key: "render",
@@ -23421,25 +23438,41 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
       var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.skinName;
       _this.loopCount = loop;
+      var data;
 
-      var data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+      if (_this.state) {
+        _this.state.removeListener(_this.stateListener);
 
+        _this.stateListener = _this.loadFin(_this.state, animationName);
+      } else {
+        data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+
+        _this.state = data.state;
+        _this.stateDate = data.stateDate;
+        _this.skeleton = data.skeleton;
+        _this.bounds = data.bounds;
+        _this.stateListener = data.listener;
+        _this.isParsed = true;
+        _this.lastTime = Date.now() / 1000;
+        _this.currentTime = Date.now() / 1000;
+        _this.animationsList = data.animations;
+        var fake = _this.ref.fake;
+        fake.state = data.state;
+        fake.skeleton = data.skeleton;
+        fake.bounds = data.bounds;
+        fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
+
+        fake.refresh();
+      }
 
       _this.resume();
-
-      var fake = _this.ref.fake;
-      fake.state = data.state;
-      fake.skeleton = data.skeleton;
-      fake.bounds = data.bounds;
-      fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
-
-      fake.refresh();
     });
 
     _this.animationName = props.animation;
     _this.skinName = props.skin || 'default';
     _this.loopCount = props.loopCount || Infinity;
     _this.isPlay = props.autoPlay !== false;
+    _this.__playbackRate = props.playbackRate || 1;
     return _this;
   }
 
@@ -23508,9 +23541,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "loadSkeleton",
     value: function loadSkeleton(initialAnimation, skin) {
-      var _this4 = this,
-          _this$props$onStart,
-          _this$props3;
+      var _this4 = this;
 
       if (skin === undefined || skin === null) {
         skin = 'default';
@@ -23546,32 +23577,46 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
         initialAnimation = skeletonData.animations[0].name;
       }
 
-      var animationState = new AnimationState(new AnimationStateData(skeleton.data));
-      animationState.setAnimation(0, initialAnimation, 0);
-      (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, initialAnimation, this.loopCount);
-      animationState.addListener({
-        complete: function complete() {
-          var _this4$props$onLoop, _this4$props;
-
-          _this4.loopCount--;
-          (_this4$props$onLoop = (_this4$props = _this4.props).onLoop) === null || _this4$props$onLoop === void 0 ? void 0 : _this4$props$onLoop.call(_this4$props, initialAnimation, _this4.loopCount);
-
-          if (_this4.loopCount > 0) {
-            animationState.setAnimation(0, initialAnimation, 0);
-          } else {
-            var _this4$props$onEnd, _this4$props2;
-
-            (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, initialAnimation);
-            animationState.setAnimation(0, initialAnimation, 0);
-            _this4.isPlay = false;
-          }
-        }
-      });
+      var animationStateData = new AnimationStateData(skeleton.data);
+      var animationState = new AnimationState(animationStateData);
+      var listener = this.loadFin(animationState, initialAnimation);
       return {
         skeleton: skeleton,
         state: animationState,
-        bounds: bounds
+        stateDate: animationStateData,
+        bounds: bounds,
+        listener: listener
       };
+    }
+  }, {
+    key: "loadFin",
+    value: function loadFin(animationState, animationName) {
+      var _this$props$onStart,
+          _this$props3,
+          _this5 = this;
+
+      animationState.setAnimation(0, animationName, true);
+      (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, animationName, this.loopCount);
+      var o = {
+        complete: function complete() {
+          var _this5$props$onLoop, _this5$props;
+
+          _this5.loopCount--;
+          (_this5$props$onLoop = (_this5$props = _this5.props).onLoop) === null || _this5$props$onLoop === void 0 ? void 0 : _this5$props$onLoop.call(_this5$props, animationName, _this5.loopCount);
+
+          if (_this5.loopCount > 0) {
+            animationState.setAnimation(0, animationName, 0);
+          } else {
+            var _this5$props$onEnd, _this5$props2;
+
+            (_this5$props$onEnd = (_this5$props2 = _this5.props).onEnd) === null || _this5$props$onEnd === void 0 ? void 0 : _this5$props$onEnd.call(_this5$props2, animationName);
+            animationState.setAnimation(0, animationName, 0);
+            _this5.isPlay = false;
+          }
+        }
+      };
+      animationState.addListener(o);
+      return o;
     }
   }, {
     key: "render",
@@ -23624,7 +23669,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.4.2";
+var version = "0.4.3";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map

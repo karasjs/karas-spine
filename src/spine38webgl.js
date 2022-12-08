@@ -192,27 +192,37 @@ export default class Spine38WebGL extends karas.Component {
     this.skinName = props.skin || 'default';
     this.loopCount = props.loopCount || Infinity;
     this.isPlay = props.autoPlay !== false;
+    this.__playbackRate = props.playbackRate || 1;
   }
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
     this.loopCount = loop;
-    let data = this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
-    this.state = data.state;
-    this.skeleton = data.skeleton;
-    this.bounds = data.bounds;
-    this.isParsed = true;
-    this.lastTime = Date.now() / 1000;
-    this.currentTime = Date.now() / 1000;
-    this.animationsList = data.animations;
-    this.resume();
+    let data;
+    if(this.state) {
+      this.state.removeListener(this.stateListener);
+      this.stateListener = this.loadFin(this.state, animationName);
+    }
+    else {
+      data = this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+      this.state = data.state;
+      this.stateDate = data.stateDate;
+      this.skeleton = data.skeleton;
+      this.bounds = data.bounds;
+      this.stateListener = data.listener;
+      this.isParsed = true;
+      this.lastTime = Date.now() / 1000;
+      this.currentTime = Date.now() / 1000;
+      this.animationsList = data.animations;
 
-    let fake = this.ref.fake;
-    fake.state = data.state;
-    fake.skeleton = data.skeleton;
-    fake.bounds = data.bounds;
-    fake.lastTime = Date.now() * 0.001;
-    // 第一帧强制显示
-    fake.refresh();
+      let fake = this.ref.fake;
+      fake.state = data.state;
+      fake.skeleton = data.skeleton;
+      fake.bounds = data.bounds;
+      fake.lastTime = Date.now() * 0.001;
+      // 第一帧强制显示
+      fake.refresh();
+    }
+    this.resume();
   }
 
   load(ctx) {
@@ -315,26 +325,32 @@ export default class Spine38WebGL extends karas.Component {
     // Create an AnimationState, and set the initial animation in looping mode.
     let animationStateData = new AnimationStateData(skeleton.data);
     let animationState = new AnimationState(animationStateData);
-    animationState.setAnimation(0, initialAnimation, true);
-    this.props.onStart?.(initialAnimation, this.loopCount);
-    animationState.addListener({
+    let listener = this.loadFin(animationState, initialAnimation);
+
+    // Pack everything up and return to caller.
+    return { skeleton, state: animationState, stateDate: animationStateData, bounds, listener };
+  }
+
+  loadFin(animationState, animationName) {
+    animationState.setAnimation(0, animationName, true);
+    this.props.onStart?.(animationName, this.loopCount);
+    let o = {
       complete: () => {
         this.loopCount--;
-        this.props.onLoop?.(initialAnimation, this.loopCount);
+        this.props.onLoop?.(animationName, this.loopCount);
 
         if(this.loopCount > 0) {
-          animationState.setAnimation(0, initialAnimation, 0);
+          animationState.setAnimation(0, animationName, 0);
         }
         else {
-          this.props.onEnd?.(initialAnimation);
-          animationState.setAnimation(0, initialAnimation, 0);
+          this.props.onEnd?.(animationName);
+          animationState.setAnimation(0, animationName, 0);
           this.isPlay = false;
         }
       },
-    });
-
-    // Pack everything up and return to caller.
-    return { skeleton, state: animationState, bounds };
+    };
+    animationState.addListener(o);
+    return o;
   }
 
   render() {

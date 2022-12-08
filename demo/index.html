@@ -25,6 +25,8 @@
           // transform: 'perspective(500) rotateY(30)',
           // filter: 'blur(1)',
         }}
+        animation={'walk'}
+        playbackRate={0.5}
         debug={false}
         premultipliedAlpha={true}
         triangle={true}
@@ -36,12 +38,15 @@
   );
 
   let spine = root.ref.spine;
-  // spine.playAnimation('run');
+  setTimeout(function() {
+    spine.stateDate.setMix('walk', 'jump', 0.2);
+    spine.playAnimation('jump');
+  }, 1000)
 </script>
 <script src="./homunculus.js"></script>
 <script src="./yurine.js"></script>
 <script src="./sea.js"></script>
-<script src="../../karas/index.js"></script>
+<script src="https://gw.alipayobjects.com/os/lib/karas/0.84.1/index.min.js"></script>
 <script src="../index.js"></script>
 <script>
   seajs.config({
