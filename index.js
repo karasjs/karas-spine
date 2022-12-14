@@ -23443,6 +23443,8 @@
         var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
         var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.skinName;
         _this.loopCount = loop;
+        var fake = _this.ref.fake;
+        fake.lastTime = fake.currentTime = Date.now() * 0.001;
         var data;
 
         if (_this.state) {
@@ -23457,15 +23459,10 @@
           _this.skeleton = data.skeleton;
           _this.bounds = data.bounds;
           _this.stateListener = data.listener;
-          _this.isParsed = true;
-          _this.lastTime = Date.now() / 1000;
-          _this.currentTime = Date.now() / 1000;
           _this.animationsList = data.animations;
-          var fake = _this.ref.fake;
           fake.state = data.state;
           fake.skeleton = data.skeleton;
-          fake.bounds = data.bounds;
-          fake.lastTime = Date.now() * 0.001; // 第一帧强制显示
+          fake.bounds = data.bounds; // 第一帧强制显示
 
           fake.refresh();
         }
@@ -23674,7 +23671,7 @@
     };
   }
 
-  var version = "0.4.4";
+  var version = "0.4.5";
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;
