@@ -13308,9 +13308,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "render",
     value: function render() {
-      return karas.createElement("div", {
-        cacheAsBitmap: true
-      }, karas.createElement($$1, {
+      return karas.createElement("div", null, karas.createElement($$1, {
         ref: "fake",
         style: {
           width: '100%',
@@ -23615,9 +23613,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
   }, {
     key: "render",
     value: function render() {
-      return karas.createElement("div", {
-        cacheAsBitmap: true
-      }, karas.createElement($, {
+      return karas.createElement("div", null, karas.createElement($, {
         ref: "fake",
         style: {
           width: '100%',
@@ -23663,7 +23659,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.4.5";
+var version = "0.4.6";
 
 export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
 //# sourceMappingURL=index.es.js.map
