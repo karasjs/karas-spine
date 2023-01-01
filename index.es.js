@@ -12966,7 +12966,7 @@ var $$1 = /*#__PURE__*/function (_karas$Geom) {
         var pm = this.matrixEvent,
             lastPm = this.lastPm;
 
-        if (lastPm && equalArr(pm, lastPm)) {
+        if (lastPm && equalArr(pm, lastPm) && this.lastX === this.__x1 && this.lastY === this.__y1) {
           this.lastMatrix && assignMatrix(this.mvp.values, this.lastMatrix);
         } else {
           // 先以骨骼原本的中心点为基准，应用节点的matrix，如果是局部缓存，则为E
@@ -13040,6 +13040,8 @@ var $$1 = /*#__PURE__*/function (_karas$Geom) {
         }
 
         this.lastPm = pm.slice(0);
+        this.lastX = this.__x1;
+        this.lastY = this.__y1;
         this.state.update(delta);
         this.state.apply(this.skeleton);
         this.skeleton.updateWorldTransform(); // Bind the shader and set the texture and model-view-projection matrix.
@@ -23659,7 +23661,15 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.4.6";
+var version = "0.4.7";
 
-export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, version };
+// import Spine40 from './spine';
+var index = {
+  version: version,
+  Spine38WebGL: Spine38WebGL,
+  Spine38Canvas: Spine38Canvas,
+  Spine38Webgl: Spine38WebGL
+};
+
+export { Spine38Canvas, Spine38WebGL, Spine38WebGL as Spine38Webgl, index as default, version };
 //# sourceMappingURL=index.es.js.map

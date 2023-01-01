@@ -12974,7 +12974,7 @@
           var pm = this.matrixEvent,
               lastPm = this.lastPm;
 
-          if (lastPm && equalArr(pm, lastPm)) {
+          if (lastPm && equalArr(pm, lastPm) && this.lastX === this.__x1 && this.lastY === this.__y1) {
             this.lastMatrix && assignMatrix(this.mvp.values, this.lastMatrix);
           } else {
             // 先以骨骼原本的中心点为基准，应用节点的matrix，如果是局部缓存，则为E
@@ -13048,6 +13048,8 @@
           }
 
           this.lastPm = pm.slice(0);
+          this.lastX = this.__x1;
+          this.lastY = this.__y1;
           this.state.update(delta);
           this.state.apply(this.skeleton);
           this.skeleton.updateWorldTransform(); // Bind the shader and set the texture and model-view-projection matrix.
@@ -23667,11 +23669,20 @@
     };
   }
 
-  var version = "0.4.6";
+  var version = "0.4.7";
+
+  // import Spine40 from './spine';
+  var index = {
+    version: version,
+    Spine38WebGL: Spine38WebGL,
+    Spine38Canvas: Spine38Canvas,
+    Spine38Webgl: Spine38WebGL
+  };
 
   exports.Spine38Canvas = Spine38Canvas;
   exports.Spine38WebGL = Spine38WebGL;
   exports.Spine38Webgl = Spine38WebGL;
+  exports["default"] = index;
   exports.version = version;
 
   Object.defineProperty(exports, '__esModule', { value: true });

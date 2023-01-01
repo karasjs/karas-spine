@@ -76,7 +76,7 @@ class $ extends karas.Geom {
       let tfo = [centerX / CX, centerY / CY];
 
       let pm = this.matrixEvent, lastPm = this.lastPm;
-      if(lastPm && equalArr(pm, lastPm)) {
+      if(lastPm && equalArr(pm, lastPm) && this.lastX === this.__x1 && this.lastY === this.__y1) {
         this.lastMatrix && assignMatrix(this.mvp.values, this.lastMatrix);
       }
       else {
@@ -128,6 +128,8 @@ class $ extends karas.Geom {
         this.lastMatrix = this.mvp.values.slice(0);
       }
       this.lastPm = pm.slice(0);
+      this.lastX = this.__x1;
+      this.lastY = this.__y1;
 
       this.state.update(delta);
       this.state.apply(this.skeleton);

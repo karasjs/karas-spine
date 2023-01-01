@@ -6,3 +6,4 @@ import { version } from '../package.json';
 
 export { version, Spine38WebGL, Spine38Canvas, Spine38WebGL as Spine38Webgl };
 
+export default { version, Spine38WebGL, Spine38Canvas, Spine38Webgl: Spine38WebGL };
