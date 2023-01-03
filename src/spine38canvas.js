@@ -113,6 +113,7 @@ export default class Spine38Canvas extends karas.Component {
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
     this.loopCount = loop;
+    this.animationName = animationName;
     let fake = this.ref.fake;
     fake.lastTime = fake.currentTime = Date.now() * 0.001;
     let data;

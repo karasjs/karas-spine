@@ -13116,6 +13116,7 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
       var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.skinName;
       _this.loopCount = loop;
+      _this.animationName = animationName;
       var fake = _this.ref.fake;
       fake.lastTime = fake.currentTime = Date.now() * 0.001;
       var data;
@@ -23435,6 +23436,7 @@ var Spine38Canvas = /*#__PURE__*/function (_karas$Component) {
       var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
       var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.skinName;
       _this.loopCount = loop;
+      _this.animationName = animationName;
       var fake = _this.ref.fake;
       fake.lastTime = fake.currentTime = Date.now() * 0.001;
       var data;
@@ -23661,7 +23663,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.4.7";
+var version = "0.4.8";
 
 // import Spine40 from './spine';
 var index = {
