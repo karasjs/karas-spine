@@ -67,6 +67,10 @@ onStart： 开始播放事件
 
 onLoop：每次循环播放触发一次
 
+onImgLoad：图片加载成功回调
+
+onImgError：图片加载失败回调
+
 animation：动画名称。改这个字段切换不同动画播放。默认是json文件第一个
 
 skin：皮肤名称。可以切换皮肤。默认是default

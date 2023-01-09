@@ -250,12 +250,12 @@ export default class Spine38WebGL extends karas.Component {
     let assetManager = this.assetManager;
     let img = this.props.image;
     if(typeof img === 'string') {
-      assetManager.loadTexture(img);
+      assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
     }
     // 多个
     else if(Array.isArray(img)) {
       for(let i = 0, len = img.length; i < len; i++) {
-        assetManager.loadTexture(img[i]);
+        assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
       }
     }
     // 多个且需要映射关系
@@ -265,7 +265,7 @@ export default class Spine38WebGL extends karas.Component {
         if(img.hasOwnProperty(i)) {
           let item = img[i];
           this.mapping[i] = item;
-          assetManager.loadTexture(item);
+          assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
         }
       }
     }

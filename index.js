@@ -13198,11 +13198,11 @@
         var img = this.props.image;
 
         if (typeof img === 'string') {
-          assetManager.loadTexture(img);
+          assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
         } // 多个
         else if (Array.isArray(img)) {
           for (var i = 0, len = img.length; i < len; i++) {
-            assetManager.loadTexture(img[i]);
+            assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
           }
         } // 多个且需要映射关系
         else {
@@ -13212,7 +13212,7 @@
             if (img.hasOwnProperty(_i)) {
               var item = img[_i];
               this.mapping[_i] = item;
-              assetManager.loadTexture(item);
+              assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
             }
           }
         }
@@ -23493,11 +23493,11 @@
         var img = this.props.image;
 
         if (typeof img === 'string') {
-          assetManager.loadTexture(img);
+          assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
         } // 多个
         else if (Array.isArray(img)) {
           for (var i = 0, len = img.length; i < len; i++) {
-            assetManager.loadTexture(img[i]);
+            assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
           }
         } // 多个且需要映射关系
         else {
@@ -23507,7 +23507,7 @@
             if (img.hasOwnProperty(_i)) {
               var item = img[_i];
               this.mapping[_i] = item;
-              assetManager.loadTexture(item);
+              assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
             }
           }
         }
@@ -23673,7 +23673,7 @@
     };
   }
 
-  var version = "0.4.9";
+  var version = "0.5.0";
 
   // import Spine40 from './spine';
   var index = {
