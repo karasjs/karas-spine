@@ -297,6 +297,15 @@ export default class Spine38WebGL extends karas.Component {
 
   componentWillUnmount() {
     this.ref.fake.bounds = null;
+    if(this.assetManager) {
+      this.assetManager.dispose();
+    }
+    if(this.batcher) {
+      this.batcher.dispose();
+    }
+    if(this.shader) {
+      this.shader.dispose();
+    }
   }
 
   loadSkeleton(initialAnimation, skin) {
