@@ -12906,14 +12906,13 @@ var _karas$math$matrix = karas.math.matrix,
     multiply = _karas$math$matrix.multiply,
     identity = _karas$math$matrix.identity,
     calPoint = _karas$math$matrix.calPoint,
+    assignMatrix = _karas$math$matrix.assignMatrix,
     WEBGL = karas.mode.WEBGL,
     _karas$enums$STYLE_KE = karas.enums.STYLE_KEY,
     TRANSFORM = _karas$enums$STYLE_KE.TRANSFORM,
     TRANSFORM_ORIGIN = _karas$enums$STYLE_KE.TRANSFORM_ORIGIN,
     calMatrixByOrigin = karas.style.transform.calMatrixByOrigin,
-    _karas$util = karas.util,
-    equalArr = _karas$util.equalArr,
-    assignMatrix = _karas$util.assignMatrix;
+    equalArr = karas.util.equalArr;
 
 var $$1 = /*#__PURE__*/function (_karas$Geom) {
   _inherits($, _karas$Geom);
@@ -23677,7 +23676,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.5.1";
+var version = "0.5.2";
 
 // import Spine40 from './spine';
 var index = {

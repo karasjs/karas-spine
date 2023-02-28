@@ -16,6 +16,7 @@ const {
       multiply,
       identity,
       calPoint,
+      assignMatrix,
     },
   },
   mode: {
@@ -34,7 +35,6 @@ const {
   },
   util: {
     equalArr,
-    assignMatrix,
   },
 } = karas;
 
