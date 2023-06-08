@@ -190,7 +190,9 @@ export default class Spine38Canvas extends karas.Component {
 
     let fake = this.ref.fake;
     fake.frameAnimate(() => {
-      fake.refresh();
+      if (this.isPlay) {
+        fake.refresh();
+      }
     });
   }
 

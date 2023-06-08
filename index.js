@@ -13246,10 +13246,14 @@
     }, {
       key: "componentDidMount",
       value: function componentDidMount() {
+        var _this4 = this;
+
         this.load(this.root.ctx);
         var fake = this.ref.fake;
         fake.frameAnimate(function () {
-          fake.refresh();
+          if (_this4.isPlay) {
+            fake.refresh();
+          }
         });
       }
     }, {
@@ -13310,26 +13314,26 @@
       value: function loadFin(animationState, animationName) {
         var _this$props$onStart,
             _this$props3,
-            _this4 = this;
+            _this5 = this;
 
         animationState.setAnimation(0, animationName, true);
         (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, animationName, this.loopCount);
         var o = {
           complete: function complete() {
-            var _this4$props$onLoop, _this4$props;
+            var _this5$props$onLoop, _this5$props;
 
-            _this4.loopCount--;
-            (_this4$props$onLoop = (_this4$props = _this4.props).onLoop) === null || _this4$props$onLoop === void 0 ? void 0 : _this4$props$onLoop.call(_this4$props, animationName, _this4.loopCount);
+            _this5.loopCount--;
+            (_this5$props$onLoop = (_this5$props = _this5.props).onLoop) === null || _this5$props$onLoop === void 0 ? void 0 : _this5$props$onLoop.call(_this5$props, animationName, _this5.loopCount);
 
-            if (_this4.loopCount > 0) {
+            if (_this5.loopCount > 0) {
               animationState.setAnimation(0, animationName, 0);
             } else {
-              var _this4$props$onEnd, _this4$props2;
+              var _this5$props$onEnd, _this5$props2;
 
-              (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, animationName);
+              (_this5$props$onEnd = (_this5$props2 = _this5.props).onEnd) === null || _this5$props$onEnd === void 0 ? void 0 : _this5$props$onEnd.call(_this5$props2, animationName);
               animationState.setAnimation(0, animationName, 0);
 
-              _this4.pause();
+              _this5.pause();
             }
           }
         };
@@ -23561,10 +23565,14 @@
     }, {
       key: "componentDidMount",
       value: function componentDidMount() {
+        var _this4 = this;
+
         this.load();
         var fake = this.ref.fake;
         fake.frameAnimate(function () {
-          fake.refresh();
+          if (_this4.isPlay) {
+            fake.refresh();
+          }
         });
       }
     }, {
@@ -23575,7 +23583,7 @@
     }, {
       key: "loadSkeleton",
       value: function loadSkeleton(initialAnimation, skin) {
-        var _this4 = this;
+        var _this5 = this;
 
         if (skin === undefined || skin === null) {
           skin = 'default';
@@ -23589,7 +23597,7 @@
           if (!res) {
             // 只有1个，可以无视，直接对上
             if (!mapping) {
-              res = assetManager.get(_this4.props.image);
+              res = assetManager.get(_this5.props.image);
             } // 多个的话，传入的是个对象，自带映射关系
             else {
               var url = mapping[path];
@@ -23627,26 +23635,26 @@
       value: function loadFin(animationState, animationName) {
         var _this$props$onStart,
             _this$props3,
-            _this5 = this;
+            _this6 = this;
 
         animationState.setAnimation(0, animationName, true);
         (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, animationName, this.loopCount);
         var o = {
           complete: function complete() {
-            var _this5$props$onLoop, _this5$props;
+            var _this6$props$onLoop, _this6$props;
 
-            _this5.loopCount--;
-            (_this5$props$onLoop = (_this5$props = _this5.props).onLoop) === null || _this5$props$onLoop === void 0 ? void 0 : _this5$props$onLoop.call(_this5$props, animationName, _this5.loopCount);
+            _this6.loopCount--;
+            (_this6$props$onLoop = (_this6$props = _this6.props).onLoop) === null || _this6$props$onLoop === void 0 ? void 0 : _this6$props$onLoop.call(_this6$props, animationName, _this6.loopCount);
 
-            if (_this5.loopCount > 0) {
+            if (_this6.loopCount > 0) {
               animationState.setAnimation(0, animationName, 0);
             } else {
-              var _this5$props$onEnd, _this5$props2;
+              var _this6$props$onEnd, _this6$props2;
 
-              (_this5$props$onEnd = (_this5$props2 = _this5.props).onEnd) === null || _this5$props$onEnd === void 0 ? void 0 : _this5$props$onEnd.call(_this5$props2, animationName);
+              (_this6$props$onEnd = (_this6$props2 = _this6.props).onEnd) === null || _this6$props$onEnd === void 0 ? void 0 : _this6$props$onEnd.call(_this6$props2, animationName);
               animationState.setAnimation(0, animationName, 0);
 
-              _this5.pause();
+              _this6.pause();
             }
           }
         };
@@ -23706,7 +23714,7 @@
     };
   }
 
-  var version = "0.5.2";
+  var version = "0.5.3";
 
   // import Spine40 from './spine';
   var index = {
