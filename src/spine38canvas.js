@@ -17,6 +17,11 @@ const { SkeletonRenderer, AssetManager } = SpineCanvas.canvas;
 const GlobalSpineRendererMap = new WeakMap();
 
 class $ extends karas.Geom {
+  constructor(tagName, props) {
+    super(tagName, props);
+    this.playbackRate = props.playbackRate || 1;
+    this.isPlay = props.isPlay || false;
+  }
   calContent(currentStyle, computedStyle) {
     let res = super.calContent(currentStyle, computedStyle);
     if(res) {
@@ -46,6 +51,9 @@ class $ extends karas.Geom {
       delta *= this.playbackRate;
     }
     this.lastTime = this.currentTime;
+    if (!this.isPlay) {
+      delta = 0;
+    }
 
     let fitSize = this.props.fitSize;
     let x = this.bounds.offset.x;
@@ -182,9 +190,7 @@ export default class Spine38Canvas extends karas.Component {
 
     let fake = this.ref.fake;
     fake.frameAnimate(() => {
-      if(this.isPlay) {
-        fake.refresh();
-      }
+      fake.refresh();
     });
   }
 
@@ -248,7 +254,7 @@ export default class Spine38Canvas extends karas.Component {
         else {
           this.props.onEnd?.(animationName);
           animationState.setAnimation(0, animationName, 0);
-          this.isPlay = false;
+          this.pause();
         }
       },
     };
@@ -262,9 +268,11 @@ export default class Spine38Canvas extends karas.Component {
         width: '100%',
         height: '100%',
       }} debug={this.props.debug}
+         isPlay={this.isPlay}
          fitSize={this.props.fitSize}
          triangle={this.props.triangle}
          repeatRender={this.props.repeatRender}
+         playbackRate={this.__playbackRate}
          onFrame={this.props.onFrame}
          onRender={this.props.onRender}/>
     </div>;
@@ -272,10 +280,12 @@ export default class Spine38Canvas extends karas.Component {
 
   pause() {
     this.isPlay = false;
+    this.ref.fake.isPlay = false;
   }
 
   resume() {
     this.isPlay = true;
+    this.ref.fake.isPlay = true;
   }
 
   set playbackRate(v) {
