@@ -12925,8 +12925,13 @@
   var $$1 = /*#__PURE__*/function (_karas$Geom) {
     _inherits($, _karas$Geom);
 
-    function $() {
-      return _karas$Geom.apply(this, arguments) || this;
+    function $(tagName, props) {
+      var _this;
+
+      _this = _karas$Geom.call(this, tagName, props) || this;
+      _this.playbackRate = props.playbackRate || 1;
+      _this.isPlay = props.isPlay || false;
+      return _this;
     }
 
     _createClass($, [{
@@ -12962,6 +12967,11 @@
           }
 
           this.lastTime = this.currentTime;
+
+          if (!this.isPlay) {
+            delta = 0;
+          }
+
           var bounds = this.bounds;
           var size = bounds.size,
               offset = bounds.offset;
@@ -13108,41 +13118,41 @@
     _inherits(Spine38WebGL, _karas$Component);
 
     function Spine38WebGL(props) {
-      var _this;
+      var _this2;
 
-      _this = _karas$Component.call(this, props) || this;
+      _this2 = _karas$Component.call(this, props) || this;
 
-      _defineProperty(_assertThisInitialized(_this), "mvp", new Matrix4());
+      _defineProperty(_assertThisInitialized(_this2), "mvp", new Matrix4());
 
-      _defineProperty(_assertThisInitialized(_this), "mapping", null);
+      _defineProperty(_assertThisInitialized(_this2), "mapping", null);
 
-      _defineProperty(_assertThisInitialized(_this), "isPlay", false);
+      _defineProperty(_assertThisInitialized(_this2), "isPlay", false);
 
-      _defineProperty(_assertThisInitialized(_this), "__playbackRate", 1);
+      _defineProperty(_assertThisInitialized(_this2), "__playbackRate", 1);
 
-      _defineProperty(_assertThisInitialized(_this), "playAnimation", function () {
-        var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this.animationName;
-        var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this.loopCount;
-        var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this.skinName;
-        _this.loopCount = loop;
-        _this.animationName = animationName;
-        var fake = _this.ref.fake;
+      _defineProperty(_assertThisInitialized(_this2), "playAnimation", function () {
+        var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.animationName;
+        var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this2.loopCount;
+        var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this2.skinName;
+        _this2.loopCount = loop;
+        _this2.animationName = animationName;
+        var fake = _this2.ref.fake;
         fake.lastTime = fake.currentTime = Date.now() * 0.001;
         var data;
 
-        if (_this.state) {
-          _this.state.removeListener(_this.stateListener);
+        if (_this2.state) {
+          _this2.state.removeListener(_this2.stateListener);
 
-          _this.stateListener = _this.loadFin(_this.state, animationName);
+          _this2.stateListener = _this2.loadFin(_this2.state, animationName);
         } else {
-          data = _this.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
+          data = _this2.loadSkeleton(animationName, skinName); // 默认的骨骼动画名称和皮肤名称
 
-          _this.state = data.state;
-          _this.stateDate = data.stateDate;
-          _this.skeleton = data.skeleton;
-          _this.bounds = data.bounds;
-          _this.stateListener = data.listener;
-          _this.animationsList = data.animations;
+          _this2.state = data.state;
+          _this2.stateDate = data.stateDate;
+          _this2.skeleton = data.skeleton;
+          _this2.bounds = data.bounds;
+          _this2.stateListener = data.listener;
+          _this2.animationsList = data.animations;
           fake.state = data.state;
           fake.skeleton = data.skeleton;
           fake.bounds = data.bounds; // 第一帧强制显示
@@ -13150,21 +13160,21 @@
           fake.refresh();
         }
 
-        _this.resume();
+        _this2.resume();
       });
 
-      _this.animationName = props.animation;
-      _this.skinName = props.skin || 'default';
-      _this.loopCount = props.loopCount || Infinity;
-      _this.isPlay = props.autoPlay !== false;
-      _this.__playbackRate = props.playbackRate || 1;
-      return _this;
+      _this2.animationName = props.animation;
+      _this2.skinName = props.skin || 'default';
+      _this2.loopCount = props.loopCount || Infinity;
+      _this2.isPlay = props.autoPlay !== false;
+      _this2.__playbackRate = props.playbackRate || 1;
+      return _this2;
     }
 
     _createClass(Spine38WebGL, [{
       key: "load",
       value: function load(ctx) {
-        var _this2 = this;
+        var _this3 = this;
 
         var fake = this.ref.fake;
 
@@ -13221,11 +13231,11 @@
 
         var onLoad = function onLoad() {
           if (assetManager.isLoadingComplete()) {
-            var _this2$props$onLoad, _this2$props;
+            var _this3$props$onLoad, _this3$props;
 
-            (_this2$props$onLoad = (_this2$props = _this2.props).onLoad) === null || _this2$props$onLoad === void 0 ? void 0 : _this2$props$onLoad.call(_this2$props);
+            (_this3$props$onLoad = (_this3$props = _this3.props).onLoad) === null || _this3$props$onLoad === void 0 ? void 0 : _this3$props$onLoad.call(_this3$props);
 
-            _this2.playAnimation();
+            _this3.playAnimation();
           } else {
             karas__default["default"].inject.requestAnimationFrame(onLoad);
           }
@@ -13236,14 +13246,10 @@
     }, {
       key: "componentDidMount",
       value: function componentDidMount() {
-        var _this3 = this;
-
         this.load(this.root.ctx);
         var fake = this.ref.fake;
         fake.frameAnimate(function () {
-          if (_this3.isPlay) {
-            fake.refresh();
-          }
+          fake.refresh();
         });
       }
     }, {
@@ -13312,6 +13318,7 @@
           complete: function complete() {
             var _this4$props$onLoop, _this4$props;
 
+            console.log(_this4.loopCount);
             _this4.loopCount--;
             (_this4$props$onLoop = (_this4$props = _this4.props).onLoop) === null || _this4$props$onLoop === void 0 ? void 0 : _this4$props$onLoop.call(_this4$props, animationName, _this4.loopCount);
 
@@ -13322,7 +13329,8 @@
 
               (_this4$props$onEnd = (_this4$props2 = _this4.props).onEnd) === null || _this4$props$onEnd === void 0 ? void 0 : _this4$props$onEnd.call(_this4$props2, animationName);
               animationState.setAnimation(0, animationName, 0);
-              _this4.isPlay = false;
+
+              _this4.pause();
             }
           }
         };
@@ -13339,10 +13347,12 @@
             height: '100%'
           },
           debug: this.props.debug,
+          isPlay: this.isPlay,
           fitSize: this.props.fitSize,
           triangle: this.props.triangle,
           premultipliedAlpha: this.props.premultipliedAlpha,
           repeatRender: this.props.repeatRender,
+          playbackRate: this.__playbackRate,
           onFrame: this.props.onFrame,
           onRender: this.props.onRender
         }));
@@ -13351,11 +13361,13 @@
       key: "pause",
       value: function pause() {
         this.isPlay = false;
+        this.ref.fake.isPlay = false;
       }
     }, {
       key: "resume",
       value: function resume() {
         this.isPlay = true;
+        this.ref.fake.isPlay = true;
       }
     }, {
       key: "playbackRate",
