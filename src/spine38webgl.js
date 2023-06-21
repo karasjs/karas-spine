@@ -206,6 +206,9 @@ export default class Spine38WebGL extends karas.Component {
   }
 
   playAnimation = (animationName = this.animationName, loop = this.loopCount, skinName = this.skinName) => {
+    if (this.__isDestroyed) {
+      return;
+    }
     this.loopCount = loop;
     this.animationName = animationName;
     let fake = this.ref.fake;
@@ -307,6 +310,7 @@ export default class Spine38WebGL extends karas.Component {
     this.ref.fake.bounds = null;
     if(this.assetManager) {
       this.assetManager.dispose();
+      this.assetManager.destroy();
     }
     if(this.batcher) {
       this.batcher.dispose();

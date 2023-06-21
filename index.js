@@ -2742,6 +2742,10 @@
         img.crossOrigin = "anonymous";
 
         img.onload = function (ev) {
+          if (_this.isDestroyed) {
+            return;
+          }
+
           var texture = _this.textureLoader(img);
 
           _this.assets[storagePath] = texture;
@@ -2759,6 +2763,10 @@
 
         if (this.rawDataUris[path]) path = this.rawDataUris[path];
         img.src = path;
+      };
+
+      AssetManager.prototype.destroy = function () {
+        this.isDestroyed = true;
       };
 
       AssetManager.prototype.loadTextureAtlas = function (path, img, mapping, success, error) {
@@ -13140,6 +13148,11 @@
         var animationName = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : _this2.animationName;
         var loop = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : _this2.loopCount;
         var skinName = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : _this2.skinName;
+
+        if (_this2.__isDestroyed) {
+          return;
+        }
+
         _this2.loopCount = loop;
         _this2.animationName = animationName;
         var fake = _this2.ref.fake;
@@ -13269,6 +13282,7 @@
 
         if (this.assetManager) {
           this.assetManager.dispose();
+          this.assetManager.destroy();
         }
 
         if (this.batcher) {
@@ -23720,7 +23734,7 @@
     };
   }
 
-  var version = "0.5.4";
+  var version = "0.5.5";
 
   // import Spine40 from './spine';
   var index = {

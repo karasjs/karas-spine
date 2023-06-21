@@ -2279,6 +2279,9 @@ var spinewebgl;
 			var img = new Image();
 			img.crossOrigin = "anonymous";
 			img.onload = function (ev) {
+				if(_this.isDestroyed) {
+					return;
+				}
 				var texture = _this.textureLoader(img);
 				_this.assets[storagePath] = texture;
 				_this.toLoad--;
@@ -2296,6 +2299,9 @@ var spinewebgl;
 			if (this.rawDataUris[path])
 				path = this.rawDataUris[path];
 			img.src = path;
+		};
+		AssetManager.prototype.destroy = function() {
+			this.isDestroyed = true;
 		};
 		AssetManager.prototype.loadTextureAtlas = function (path, img, mapping, success, error) {
 			var _this = this;
