@@ -8360,6 +8360,10 @@ var spinewebgl;
 					gl.generateMipmap(gl.TEXTURE_2D);
 			};
 			GLTexture.prototype.restore = function () {
+				if (this.texture) {
+					var gl = this.context.gl;
+					gl.deleteTexture(this.texture);
+				}
 				this.texture = null;
 				this.update(this.useMipMaps);
 			};
@@ -8379,6 +8383,7 @@ var spinewebgl;
 				this.context.removeRestorable(this);
 				var gl = this.context.gl;
 				gl.deleteTexture(this.texture);
+				this.texture = null;
 			};
 			GLTexture.DISABLE_UNPACK_PREMULTIPLIED_ALPHA_WEBGL = false;
 			return GLTexture;

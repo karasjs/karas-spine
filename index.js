@@ -9928,6 +9928,11 @@
         };
 
         GLTexture.prototype.restore = function () {
+          if (this.texture) {
+            var gl = this.context.gl;
+            gl.deleteTexture(this.texture);
+          }
+
           this.texture = null;
           this.update(this.useMipMaps);
         };
@@ -9953,6 +9958,7 @@
           this.context.removeRestorable(this);
           var gl = this.context.gl;
           gl.deleteTexture(this.texture);
+          this.texture = null;
         };
 
         GLTexture.DISABLE_UNPACK_PREMULTIPLIED_ALPHA_WEBGL = false;
@@ -23714,7 +23720,7 @@
     };
   }
 
-  var version = "0.5.3";
+  var version = "0.5.4";
 
   // import Spine40 from './spine';
   var index = {
