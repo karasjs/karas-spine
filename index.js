@@ -12910,6 +12910,8 @@
   var SpineWebGL = spinewebgl;
 
   var AtlasAttachmentLoader$1 = SpineWebGL.AtlasAttachmentLoader,
+      TextureAtlas$1 = SpineWebGL.TextureAtlas,
+      SharedAssetManager = SpineWebGL.SharedAssetManager,
       SkeletonJson$1 = SpineWebGL.SkeletonJson,
       Skeleton$1 = SpineWebGL.Skeleton,
       Vector2$1 = SpineWebGL.Vector2,
@@ -12917,7 +12919,7 @@
       AnimationStateData$1 = SpineWebGL.AnimationStateData;
   var _SpineWebGL$webgl = SpineWebGL.webgl,
       SkeletonRenderer$1 = _SpineWebGL$webgl.SkeletonRenderer,
-      AssetManager$1 = _SpineWebGL$webgl.AssetManager,
+      GLTexture = _SpineWebGL$webgl.GLTexture,
       Shader = _SpineWebGL$webgl.Shader,
       PolygonBatcher = _SpineWebGL$webgl.PolygonBatcher,
       Matrix4 = _SpineWebGL$webgl.Matrix4; // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
@@ -13214,8 +13216,9 @@
 
         if (!this.shader) {
           this.shader = Shader.newTwoColoredTextured(ctx);
-          this.batcher = new PolygonBatcher(ctx);
-          this.assetManager = new AssetManager$1(ctx, undefined, false, 0);
+          this.batcher = new PolygonBatcher(ctx); // this.assetManager = new AssetManager(ctx, undefined, false, 0);
+
+          this.assetManager = new SharedAssetManager(undefined);
         }
 
         fake.renderer = this.renderer;
@@ -13243,13 +13246,21 @@
               assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
             }
           }
-        }
+        } // assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+        // assetManager.loadText(this.props.json);
 
-        assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
-        assetManager.loadText(this.props.json);
+
+        var textureLoader = function textureLoader(img) {
+          return new GLTexture(ctx, img);
+        };
+
+        var id = this.__root.__uuid;
+        assetManager.loadTexture(id, textureLoader, img);
+        assetManager.loadText(id, this.props.atlas);
+        assetManager.loadJson(id, this.props.json);
 
         var onLoad = function onLoad() {
-          if (assetManager.isLoadingComplete()) {
+          if (assetManager.isLoadingComplete(id)) {
             var _this3$props$onLoad, _this3$props;
 
             (_this3$props$onLoad = (_this3$props = _this3.props).onLoad) === null || _this3$props$onLoad === void 0 ? void 0 : _this3$props$onLoad.call(_this3$props);
@@ -13281,8 +13292,7 @@
         this.ref.fake.bounds = null;
 
         if (this.assetManager) {
-          this.assetManager.dispose();
-          this.assetManager.destroy();
+          this.assetManager.dispose(); // this.assetManager.destroy();
         }
 
         if (this.batcher) {
@@ -13296,18 +13306,25 @@
     }, {
       key: "loadSkeleton",
       value: function loadSkeleton(initialAnimation, skin) {
+        var _this5 = this;
+
         if (skin === undefined || skin === null) {
           skin = 'default';
-        } // Load the texture atlas using name.atlas from the AssetManager.
+        }
 
-
-        var atlas = this.assetManager.get(this.props.atlas); // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
+        var id = this.__root.__uuid;
+        var name = this.assetManager.get(id, this.props.atlas);
+        var atlas = new TextureAtlas$1(name, function (path) {
+          return _this5.assetManager.get(id, path);
+        }); // // Load the texture atlas using name.atlas from the AssetManager.
+        // let atlas = this.assetManager.get(this.props.atlas);
+        // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
 
         var atlasLoader = new AtlasAttachmentLoader$1(atlas); // Create a SkeletonBinary instance for parsing the .skel file.
 
         var skeletonBinary = new SkeletonJson$1(atlasLoader); // Set the scale to apply during parsing, parse the file, and create a new skeleton.
 
-        var skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
+        var skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(id, this.props.json));
         var skeleton = new Skeleton$1(skeletonData);
         skeleton.setSkinByName(skin);
         var bounds = calculateBounds$1(skeleton);
@@ -13334,26 +13351,26 @@
       value: function loadFin(animationState, animationName) {
         var _this$props$onStart,
             _this$props3,
-            _this5 = this;
+            _this6 = this;
 
         animationState.setAnimation(0, animationName, true);
         (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, animationName, this.loopCount);
         var o = {
           complete: function complete() {
-            var _this5$props$onLoop, _this5$props;
+            var _this6$props$onLoop, _this6$props;
 
-            _this5.loopCount--;
-            (_this5$props$onLoop = (_this5$props = _this5.props).onLoop) === null || _this5$props$onLoop === void 0 ? void 0 : _this5$props$onLoop.call(_this5$props, animationName, _this5.loopCount);
+            _this6.loopCount--;
+            (_this6$props$onLoop = (_this6$props = _this6.props).onLoop) === null || _this6$props$onLoop === void 0 ? void 0 : _this6$props$onLoop.call(_this6$props, animationName, _this6.loopCount);
 
-            if (_this5.loopCount > 0) {
+            if (_this6.loopCount > 0) {
               animationState.setAnimation(0, animationName, 0);
             } else {
-              var _this5$props$onEnd, _this5$props2;
+              var _this6$props$onEnd, _this6$props2;
 
-              (_this5$props$onEnd = (_this5$props2 = _this5.props).onEnd) === null || _this5$props$onEnd === void 0 ? void 0 : _this5$props$onEnd.call(_this5$props2, animationName);
+              (_this6$props$onEnd = (_this6$props2 = _this6.props).onEnd) === null || _this6$props$onEnd === void 0 ? void 0 : _this6$props$onEnd.call(_this6$props2, animationName);
               animationState.setAnimation(0, animationName, 0);
 
-              _this5.pause();
+              _this6.pause();
             }
           }
         };
