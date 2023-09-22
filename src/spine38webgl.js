@@ -2,7 +2,7 @@
 import karas from 'karas';
 import SpineWebGL from './spine-webgl';
 
-const { AtlasAttachmentLoader, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData } = SpineWebGL;
+const { AtlasAttachmentLoader, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData, SharedAssetManager } = SpineWebGL;
 const { SkeletonRenderer, AssetManager, Shader, PolygonBatcher, Matrix4 } = SpineWebGL.webgl;
 
 
@@ -251,7 +251,7 @@ export default class Spine38WebGL extends karas.Component {
     if(!this.shader) {
       this.shader = Shader.newTwoColoredTextured(ctx);
       this.batcher = new PolygonBatcher(ctx);
-      this.assetManager = new AssetManager(ctx, undefined, false, 0);
+      this.assetManager = new SharedAssetManager(undefined, false, 0);
     }
     fake.renderer = this.renderer;
     fake.shader = this.shader;
@@ -280,7 +280,8 @@ export default class Spine38WebGL extends karas.Component {
         }
       }
     }
-    assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+    // assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+    assetManager.loadText(this.props.atlas);
     assetManager.loadText(this.props.json);
 
     let onLoad = () => {
@@ -310,7 +311,7 @@ export default class Spine38WebGL extends karas.Component {
     this.ref.fake.bounds = null;
     if(this.assetManager) {
       this.assetManager.dispose();
-      this.assetManager.destroy();
+      // this.assetManager.destroy();
     }
     if(this.batcher) {
       this.batcher.dispose();
