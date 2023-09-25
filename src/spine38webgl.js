@@ -2,8 +2,9 @@
 import karas from 'karas';
 import SpineWebGL from './spine-webgl';
 
-const { AtlasAttachmentLoader, TextureAtlas, SharedAssetManager, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData } = SpineWebGL;
-const { SkeletonRenderer, GLTexture, Shader, PolygonBatcher, Matrix4 } = SpineWebGL.webgl;
+const { AtlasAttachmentLoader, SkeletonJson, Skeleton, Vector2, AnimationState, AnimationStateData } = SpineWebGL;
+const { SkeletonRenderer, AssetManager, Shader, PolygonBatcher, Matrix4 } = SpineWebGL.webgl;
+
 
 // 储存全局的spine渲染器的对象。在一个karas场景里面，n个spine元素使用同一个渲染器。一个页面可以有n个karas场景，根据canvas上下文唯一确定渲染器
 const GlobalSpineRendererMap = new WeakMap();
@@ -250,8 +251,7 @@ export default class Spine38WebGL extends karas.Component {
     if(!this.shader) {
       this.shader = Shader.newTwoColoredTextured(ctx);
       this.batcher = new PolygonBatcher(ctx);
-      // this.assetManager = new AssetManager(ctx, undefined, false, 0);
-      this.assetManager = new SharedAssetManager(undefined);
+      this.assetManager = new AssetManager(ctx, undefined, false, 0);
     }
     fake.renderer = this.renderer;
     fake.shader = this.shader;
@@ -280,18 +280,11 @@ export default class Spine38WebGL extends karas.Component {
         }
       }
     }
-    // assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
-    // assetManager.loadText(this.props.json);
-    let textureLoader = function(img) {
-      return new GLTexture(ctx, img);
-    };
-    let id = this.__root.__uuid;
-    assetManager.loadTexture(id, textureLoader, img);
-    assetManager.loadText(id, this.props.atlas);
-    assetManager.loadJson(id, this.props.json);
+    assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+    assetManager.loadText(this.props.json);
 
     let onLoad = () => {
-      if(assetManager.isLoadingComplete(id)) {
+      if(assetManager.isLoadingComplete()) {
         this.props.onLoad?.();
         this.playAnimation();
       }
@@ -317,7 +310,7 @@ export default class Spine38WebGL extends karas.Component {
     this.ref.fake.bounds = null;
     if(this.assetManager) {
       this.assetManager.dispose();
-      // this.assetManager.destroy();
+      this.assetManager.destroy();
     }
     if(this.batcher) {
       this.batcher.dispose();
@@ -332,14 +325,8 @@ export default class Spine38WebGL extends karas.Component {
       skin = 'default';
     }
 
-    let id = this.__root.__uuid;
-    let name = this.assetManager.get(id, this.props.atlas);
-    let atlas = new TextureAtlas(name, (path) => {
-      return this.assetManager.get(id, path);
-    });
-
-    // // Load the texture atlas using name.atlas from the AssetManager.
-    // let atlas = this.assetManager.get(this.props.atlas);
+    // Load the texture atlas using name.atlas from the AssetManager.
+    let atlas = this.assetManager.get(this.props.atlas);
 
     // Create a AtlasAttachmentLoader that resolves region, mesh, boundingbox and path attachments
     let atlasLoader = new AtlasAttachmentLoader(atlas);
@@ -348,7 +335,7 @@ export default class Spine38WebGL extends karas.Component {
     let skeletonBinary = new SkeletonJson(atlasLoader);
 
     // Set the scale to apply during parsing, parse the file, and create a new skeleton.
-    let skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(id, this.props.json));
+    let skeletonData = skeletonBinary.readSkeletonData(this.assetManager.get(this.props.json));
     let skeleton = new Skeleton(skeletonData);
     skeleton.setSkinByName(skin);
     let bounds = calculateBounds(skeleton);
