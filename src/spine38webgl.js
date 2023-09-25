@@ -251,7 +251,8 @@ export default class Spine38WebGL extends karas.Component {
     if(!this.shader) {
       this.shader = Shader.newTwoColoredTextured(ctx);
       this.batcher = new PolygonBatcher(ctx);
-      this.assetManager = new AssetManager(ctx, undefined, false, 0);
+      this.assetManager = this.getSharedAssetManager(ctx);
+      // this.assetManager = new AssetManager(ctx, undefined, false, 0);
     }
     fake.renderer = this.renderer;
     fake.shader = this.shader;
@@ -259,29 +260,30 @@ export default class Spine38WebGL extends karas.Component {
     fake.mvp = this.mvp;
 
     let assetManager = this.assetManager;
-    let img = this.props.image;
-    if(typeof img === 'string') {
-      assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
-    }
-    // 多个
-    else if(Array.isArray(img)) {
-      for(let i = 0, len = img.length; i < len; i++) {
-        assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
-      }
-    }
-    // 多个且需要映射关系
-    else {
-      this.mapping = {};
-      for(let i in img) {
-        if(img.hasOwnProperty(i)) {
-          let item = img[i];
-          this.mapping[i] = item;
-          assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
-        }
-      }
-    }
-    assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
-    assetManager.loadText(this.props.json);
+    // let img = this.props.image;
+    // if(typeof img === 'string') {
+    //   assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
+    // }
+    // // 多个
+    // else if(Array.isArray(img)) {
+    //   for(let i = 0, len = img.length; i < len; i++) {
+    //     assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
+    //   }
+    // }
+    // // 多个且需要映射关系
+    // else {
+    //   this.mapping = {};
+    //   for(let i in img) {
+    //     if(img.hasOwnProperty(i)) {
+    //       let item = img[i];
+    //       this.mapping[i] = item;
+    //       assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
+    //     }
+    //   }
+    // }
+
+    // assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+    // assetManager.loadText(this.props.json);
 
     let onLoad = () => {
       if(assetManager.isLoadingComplete()) {
@@ -294,6 +296,39 @@ export default class Spine38WebGL extends karas.Component {
     }
     onLoad();
   }
+
+  getSharedAssetManager(ctx) {
+    if (!ctx._sharedAssetManager) {
+      ctx._sharedAssetManager = new Map();
+    }
+    let assetManager = null;
+    const { image } = this.props;
+
+    const createAssetManager = () => {
+      const am = new AssetManager(ctx, undefined, false, 0);
+      am.loadTextureAtlas(this.props.atlas, image, this.mapping);
+      am.loadText(this.props.json);
+      am._usedNum = 1;
+      return am;
+    }
+
+    if (typeof image === 'string') {
+      // 默认image为唯一key
+      assetManager = ctx._sharedAssetManager.get(image);
+      if (assetManager) {
+        assetManager._usedNum++;
+        return assetManager;
+      }
+
+      assetManager = createAssetManager();
+      ctx._sharedAssetManager.set(image, assetManager);
+      return assetManager;
+    }
+
+    assetManager = createAssetManager();
+    return assetManager;
+  }
+
 
   componentDidMount() {
     this.load(this.root.ctx);
@@ -309,8 +344,12 @@ export default class Spine38WebGL extends karas.Component {
   componentWillUnmount() {
     this.ref.fake.bounds = null;
     if(this.assetManager) {
-      this.assetManager.dispose();
-      this.assetManager.destroy();
+      this.assetManager._usedNum--;
+      if (!this.assetManager._usedNum) {
+        this.assetManager.dispose();
+        this.assetManager.destroy();
+        this.root.ctx._sharedAssetManager?.set(this.props.image, null);
+      }
     }
     if(this.batcher) {
       this.batcher.dispose();
