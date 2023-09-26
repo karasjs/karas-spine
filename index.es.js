@@ -13207,38 +13207,36 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       if (!this.shader) {
         this.shader = Shader.newTwoColoredTextured(ctx);
         this.batcher = new PolygonBatcher(ctx);
-        this.assetManager = new AssetManager$1(ctx, undefined, false, 0);
+        this.assetManager = this.getSharedAssetManager(ctx); // this.assetManager = new AssetManager(ctx, undefined, false, 0);
       }
 
       fake.renderer = this.renderer;
       fake.shader = this.shader;
       fake.batcher = this.batcher;
       fake.mvp = this.mvp;
-      var assetManager = this.assetManager;
-      var img = this.props.image;
-
-      if (typeof img === 'string') {
-        assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
-      } // 多个
-      else if (Array.isArray(img)) {
-        for (var i = 0, len = img.length; i < len; i++) {
-          assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
-        }
-      } // 多个且需要映射关系
-      else {
-        this.mapping = {};
-
-        for (var _i in img) {
-          if (img.hasOwnProperty(_i)) {
-            var item = img[_i];
-            this.mapping[_i] = item;
-            assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
-          }
-        }
-      }
-
-      assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
-      assetManager.loadText(this.props.json);
+      var assetManager = this.assetManager; // let img = this.props.image;
+      // if(typeof img === 'string') {
+      //   assetManager.loadTexture(img, this.props.onImgLoad, this.props.onImgError);
+      // }
+      // // 多个
+      // else if(Array.isArray(img)) {
+      //   for(let i = 0, len = img.length; i < len; i++) {
+      //     assetManager.loadTexture(img[i], this.props.onImgLoad, this.props.onImgError);
+      //   }
+      // }
+      // // 多个且需要映射关系
+      // else {
+      //   this.mapping = {};
+      //   for(let i in img) {
+      //     if(img.hasOwnProperty(i)) {
+      //       let item = img[i];
+      //       this.mapping[i] = item;
+      //       assetManager.loadTexture(item, this.props.onImgLoad, this.props.onImgError);
+      //     }
+      //   }
+      // }
+      // assetManager.loadTextureAtlas(this.props.atlas, img, this.mapping);
+      // assetManager.loadText(this.props.json);
 
       var onLoad = function onLoad() {
         if (assetManager.isLoadingComplete()) {
@@ -13255,14 +13253,53 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       onLoad();
     }
   }, {
+    key: "getSharedAssetManager",
+    value: function getSharedAssetManager(ctx) {
+      var _this4 = this;
+
+      if (!ctx._sharedAssetManager) {
+        ctx._sharedAssetManager = new Map();
+      }
+
+      var assetManager = null;
+      var image = this.props.image;
+
+      var createAssetManager = function createAssetManager() {
+        var am = new AssetManager$1(ctx, undefined, false, 0);
+        am.loadTextureAtlas(_this4.props.atlas, image, _this4.mapping);
+        am.loadText(_this4.props.json);
+        am._usedNum = 1;
+        return am;
+      };
+
+      if (typeof image === 'string') {
+        // 默认image为唯一key
+        assetManager = ctx._sharedAssetManager.get(image);
+
+        if (assetManager) {
+          assetManager._usedNum++;
+          return assetManager;
+        }
+
+        assetManager = createAssetManager();
+
+        ctx._sharedAssetManager.set(image, assetManager);
+
+        return assetManager;
+      }
+
+      assetManager = createAssetManager();
+      return assetManager;
+    }
+  }, {
     key: "componentDidMount",
     value: function componentDidMount() {
-      var _this4 = this;
+      var _this5 = this;
 
       this.load(this.root.ctx);
       var fake = this.ref.fake;
       fake.frameAnimate(function () {
-        if (_this4.isPlay) {
+        if (_this5.isPlay) {
           fake.refresh();
         }
       });
@@ -13273,8 +13310,15 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
       this.ref.fake.bounds = null;
 
       if (this.assetManager) {
-        this.assetManager.dispose();
-        this.assetManager.destroy();
+        this.assetManager._usedNum--;
+
+        if (!this.assetManager._usedNum) {
+          var _this$root$ctx$_share;
+
+          this.assetManager.dispose();
+          this.assetManager.destroy();
+          (_this$root$ctx$_share = this.root.ctx._sharedAssetManager) === null || _this$root$ctx$_share === void 0 ? void 0 : _this$root$ctx$_share.set(this.props.image, null);
+        }
       }
 
       if (this.batcher) {
@@ -13326,26 +13370,26 @@ var Spine38WebGL = /*#__PURE__*/function (_karas$Component) {
     value: function loadFin(animationState, animationName) {
       var _this$props$onStart,
           _this$props3,
-          _this5 = this;
+          _this6 = this;
 
       animationState.setAnimation(0, animationName, true);
       (_this$props$onStart = (_this$props3 = this.props).onStart) === null || _this$props$onStart === void 0 ? void 0 : _this$props$onStart.call(_this$props3, animationName, this.loopCount);
       var o = {
         complete: function complete() {
-          var _this5$props$onLoop, _this5$props;
+          var _this6$props$onLoop, _this6$props;
 
-          _this5.loopCount--;
-          (_this5$props$onLoop = (_this5$props = _this5.props).onLoop) === null || _this5$props$onLoop === void 0 ? void 0 : _this5$props$onLoop.call(_this5$props, animationName, _this5.loopCount);
+          _this6.loopCount--;
+          (_this6$props$onLoop = (_this6$props = _this6.props).onLoop) === null || _this6$props$onLoop === void 0 ? void 0 : _this6$props$onLoop.call(_this6$props, animationName, _this6.loopCount);
 
-          if (_this5.loopCount > 0) {
+          if (_this6.loopCount > 0) {
             animationState.setAnimation(0, animationName, 0);
           } else {
-            var _this5$props$onEnd, _this5$props2;
+            var _this6$props$onEnd, _this6$props2;
 
-            (_this5$props$onEnd = (_this5$props2 = _this5.props).onEnd) === null || _this5$props$onEnd === void 0 ? void 0 : _this5$props$onEnd.call(_this5$props2, animationName);
+            (_this6$props$onEnd = (_this6$props2 = _this6.props).onEnd) === null || _this6$props$onEnd === void 0 ? void 0 : _this6$props$onEnd.call(_this6$props2, animationName);
             animationState.setAnimation(0, animationName, 0);
 
-            _this5.pause();
+            _this6.pause();
           }
         }
       };
@@ -23726,7 +23770,7 @@ function calculateBounds(skeleton) {
   };
 }
 
-var version = "0.5.5";
+var version = "0.6.0";
 
 // import Spine40 from './spine';
 var index = {
